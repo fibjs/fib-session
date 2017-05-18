@@ -29,6 +29,7 @@ describe('session', () => {
 
     let conn;
     let session;
+    let request;
 
     before(() => conn = db.openSQLite('test.db'));
     after(() => {
@@ -45,25 +46,19 @@ describe('session', () => {
     // });
 
     describe('cookie auto', function() {
-        it('setup', function() {
+        it('server', () => {
             ++url.port;
             session = new Session(conn, {
                 table_name: 'session',
             });
-            //session.store.setup();
-        });
-
-        it('server', () => {
             let srv = new http.Server(url.port, [
+                r => { request = r },
                 session.cookie_filter,
                 {
                     '^/user$': (r) => r.session && (r.session.username = r.query.username),
                     '^/get$': (r) => r.response.write(r.session.username),
                     '^/del$': (r) => delete r.session.username,
                     '^/remove$': (r) => session.remove(r.sessionid),
-                },
-                r => {
-                    session._req = r
                 },
             ]);
             srv.asyncRun();
@@ -72,17 +67,17 @@ describe('session', () => {
         it('without sessionID', () => {
             let res = new http.Client().get(url.host + '/user?username=lion');
 
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(session._req.session.username, 'lion');
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(request.session.username, 'lion');
 
             let cookie = res.cookies[0];
             assert.equal(cookie.name, 'sessionID');
-            assert.equal(cookie.value, session._req.sessionid);
+            assert.equal(cookie.value, request.sessionid);
 
-            assert.deepEqual(session.store.get(session._req.sessionid), {username: 'lion'});
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), null);
+            assert.deepEqual(session.get(request.sessionid), {username: 'lion'});
+            assert.deepEqual(get_persistent_storage(request.sessionid), null);
             wait();
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), {username: 'lion'});
+            assert.deepEqual(get_persistent_storage(request.sessionid), {username: 'lion'});
         });
 
         it('with sessionID', () => {
@@ -91,30 +86,30 @@ describe('session', () => {
             // saves sessionID in client cookies
             let res = client.get(url.host + '/user?username=lion');
 
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(session._req.session.username, 'lion');
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(request.session.username, 'lion');
 
             let cookie = res.cookies[0];
             assert.equal(cookie.name, 'sessionID');
-            assert.equal(cookie.value, session._req.sessionid);
+            assert.equal(cookie.value, request.sessionid);
 
-            assert.deepEqual(session.store.get(session._req.sessionid), {username: 'lion'});
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), null);
+            assert.deepEqual(session.get(request.sessionid), {username: 'lion'});
+            assert.deepEqual(get_persistent_storage(request.sessionid), null);
             wait();
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), {username: 'lion'});
+            assert.deepEqual(get_persistent_storage(request.sessionid), {username: 'lion'});
 
             res = client.get(url.host + '/get');
 
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(session._req.session.username, 'lion');
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(request.session.username, 'lion');
 
             assert.equal(res.data.toString(), 'lion');
             cookie = res.cookies[0];
             assert.equal(cookie.name, 'sessionID');
-            assert.equal(cookie.value, session._req.sessionid);
+            assert.equal(cookie.value, request.sessionid);
 
-            assert.deepEqual(session.store.get(session._req.sessionid), {username: 'lion'});
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), {username: 'lion'});
+            assert.deepEqual(session.get(request.sessionid), {username: 'lion'});
+            assert.deepEqual(get_persistent_storage(request.sessionid), {username: 'lion'});
         });
 
         it('illegal sessionID', () => {
@@ -126,80 +121,80 @@ describe('session', () => {
 
             res = client.get(url.host + '/get');
 
-            assert.equal(session._req.session.username, undefined);
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(session.store.get(session._req.sessionid), null);
+            assert.equal(request.session.username, undefined);
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(session.get(request.sessionid), null);
             let cookie = res.cookies[0];
             assert.equal(cookie.value.length, 32);
-            assert.equal(session._req.session.username, null);
+            assert.equal(request.session.username, null);
 
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), null);
+            assert.deepEqual(get_persistent_storage(request.sessionid), null);
             wait();
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), null);
+            assert.deepEqual(get_persistent_storage(request.sessionid), null);
         });
 
         it('delete session property', () => {
             let client = new http.Client();
             let res = client.get(url.host + '/user?username=lion');
 
-            assert.equal(session._req.session.username, 'lion');
-            assert.equal(session._req.sessionid.length, 32);
+            assert.equal(request.session.username, 'lion');
+            assert.equal(request.sessionid.length, 32);
             let cookie = res.cookies[0];
             assert.equal(cookie.value.length, 32);
-            assert.equal(session._req.session.username, 'lion');
+            assert.equal(request.session.username, 'lion');
 
-            assert.deepEqual(session.store.get(session._req.sessionid), {username: 'lion'});
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), null);
+            assert.deepEqual(session.get(request.sessionid), {username: 'lion'});
+            assert.deepEqual(get_persistent_storage(request.sessionid), null);
             wait();
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), {username: 'lion'});
+            assert.deepEqual(get_persistent_storage(request.sessionid), {username: 'lion'});
 
             res = client.get(url.host + '/del');
 
-            assert.equal(session._req.session.username, undefined);
-            assert.equal(session._req.sessionid.length, 32);
+            assert.equal(request.session.username, undefined);
+            assert.equal(request.sessionid.length, 32);
             cookie = res.cookies[0];
             assert.equal(cookie.value.length, 32);
-            assert.equal(session._req.session.username, null);
+            assert.equal(request.session.username, null);
 
-            assert.deepEqual(session.store.get(session._req.sessionid), {});
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), {username: 'lion'});
+            assert.deepEqual(session.get(request.sessionid), {});
+            assert.deepEqual(get_persistent_storage(request.sessionid), {username: 'lion'});
             wait();
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), {});
+            assert.deepEqual(get_persistent_storage(request.sessionid), {});
 
             res = client.get(url.host + '/get');
 
-            assert.equal(session._req.session.username, undefined);
-            assert.equal(session._req.sessionid.length, 32);
+            assert.equal(request.session.username, undefined);
+            assert.equal(request.sessionid.length, 32);
 
-            assert.deepEqual(session.store.get(session._req.sessionid), {});
+            assert.deepEqual(session.get(request.sessionid), {});
 
             cookie = res.cookies[0];
             assert.equal(cookie.value.length, 32);
-            assert.equal(session._req.session.username, null);
+            assert.equal(request.session.username, null);
 
-            assert.deepEqual(session.store.get(session._req.sessionid), {});
+            assert.deepEqual(session.get(request.sessionid), {});
             wait();
-            assert.deepEqual(session.store.get(session._req.sessionid), {});
+            assert.deepEqual(session.get(request.sessionid), {});
         });
 
         it('adjacent requests', () => {
             let client = new http.Client();
             let res = client.get(url.host + '/user?username=lion1');
-            assert.equal(session._req.session.username, 'lion1');
+            assert.equal(request.session.username, 'lion1');
 
             res = client.get(url.host + '/user?username=lion2');
-            assert.equal(session._req.session.username, 'lion2');
+            assert.equal(request.session.username, 'lion2');
 
             res = client.get(url.host + '/user?username=lion3');
-            assert.equal(session._req.session.username, 'lion3');
+            assert.equal(request.session.username, 'lion3');
 
             res = client.get(url.host + '/user?username=lion4');
-            assert.equal(session._req.session.username, 'lion4');
+            assert.equal(request.session.username, 'lion4');
 
-            assert.deepEqual(session.store.get(session._req.sessionid), {username: 'lion4'});
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), null);
+            assert.deepEqual(session.get(request.sessionid), {username: 'lion4'});
+            assert.deepEqual(get_persistent_storage(request.sessionid), null);
             wait();
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), {username: 'lion4'});
+            assert.deepEqual(get_persistent_storage(request.sessionid), {username: 'lion4'});
         });
 
         it('multiple clients', () => {
@@ -208,62 +203,62 @@ describe('session', () => {
 
             let res_a = client_a.get(url.host + '/user?username=lion');
 
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(session._req.session.username, 'lion');
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(request.session.username, 'lion');
             assert.equal(res_a.data, undefined);
             let cookie_a = res_a.cookies[0];
             assert.equal(cookie_a.name, 'sessionID');
-            assert.equal(cookie_a.value, session._req.sessionid);
+            assert.equal(cookie_a.value, request.sessionid);
 
             let res_b = client_b.get(url.host + '/user?username=lion');
 
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(session._req.session.username, 'lion');
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(request.session.username, 'lion');
             assert.equal(res_b.data, undefined);
             let cookie_b = res_b.cookies[0];
             assert.equal(cookie_b.name, 'sessionID');
-            assert.equal(cookie_b.value, session._req.sessionid);
+            assert.equal(cookie_b.value, request.sessionid);
 
             res_a = client_a.get(url.host + '/user?username=lion-a');
 
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(session._req.session.username, 'lion-a');
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(request.session.username, 'lion-a');
             assert.equal(res_a.data, undefined);
             cookie_a = res_a.cookies[0];
             assert.equal(cookie_a.name, 'sessionID');
-            assert.equal(cookie_a.value, session._req.sessionid);
+            assert.equal(cookie_a.value, request.sessionid);
 
             res_b = client_b.get(url.host + '/user?username=lion-b');
 
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(session._req.session.username, 'lion-b');
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(request.session.username, 'lion-b');
             assert.equal(res_b.data, undefined);
             cookie_b = res_b.cookies[0];
             assert.equal(cookie_b.name, 'sessionID');
-            assert.equal(cookie_b.value, session._req.sessionid);
+            assert.equal(cookie_b.value, request.sessionid);
 
             res_a = client_a.get(url.host + '/get');
 
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(session._req.session.username, 'lion-a');
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(request.session.username, 'lion-a');
             assert.equal(res_a.data.toString(), 'lion-a');
             cookie_a = res_a.cookies[0];
             assert.equal(cookie_a.name, 'sessionID');
-            assert.equal(cookie_a.value, session._req.sessionid);
+            assert.equal(cookie_a.value, request.sessionid);
 
-            assert.deepEqual(session.store.get(cookie_a.value), {username: 'lion-a'});
+            assert.deepEqual(session.get(cookie_a.value), {username: 'lion-a'});
             assert.deepEqual(get_persistent_storage(cookie_a.value), null);
 
             res_b = client_b.get(url.host + '/get');
 
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(session._req.session.username, 'lion-b');
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(request.session.username, 'lion-b');
             assert.equal(res_b.data.toString(), 'lion-b');
             cookie_b = res_b.cookies[0];
             assert.equal(cookie_b.name, 'sessionID');
-            assert.equal(cookie_b.value, session._req.sessionid);
+            assert.equal(cookie_b.value, request.sessionid);
 
-            assert.deepEqual(session.store.get(cookie_b.value), {username: 'lion-b'});
+            assert.deepEqual(session.get(cookie_b.value), {username: 'lion-b'});
             assert.deepEqual(get_persistent_storage(cookie_a.value), null);
 
             wait();
@@ -274,47 +269,44 @@ describe('session', () => {
         it('remove session', () => {
             let client = new http.Client();
             let res = client.get(url.host + '/user?username=lion');
-            assert.equal(session._req.session.username, 'lion');
+            assert.equal(request.session.username, 'lion');
 
             // local_sid is used to check session.store after request.sessionid is deleted
-            let local_sid = session._req.sessionid;
+            let local_sid = request.sessionid;
 
             res = client.get(url.host + '/remove');
-            assert.equal(session._req.sessionid, undefined);
-            assert.equal(session._req.session, undefined);
+            assert.equal(request.sessionid, undefined);
+            assert.equal(request.session, undefined);
 
-            assert.deepEqual(session.store.get(local_sid), null);
+            assert.deepEqual(session.get(local_sid), null);
 
             let get_res = client.get(url.host + '/get');
             assert.equal(get_res.data, null);
 
-            assert.equal(session._req.session.username, undefined);
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(session.store.get(local_sid), null);
+            assert.equal(request.session.username, undefined);
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(session.get(local_sid), null);
             let cookie = get_res.cookies[0];
             assert.equal(cookie.value.length, 32);
-            assert.equal(session._req.session.username, null);
+            assert.equal(request.session.username, null);
 
-            assert.deepEqual(session.store.get(local_sid), null);
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), null);
+            assert.deepEqual(session.get(local_sid), null);
+            assert.deepEqual(get_persistent_storage(request.sessionid), null);
             wait();
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), null);
+            assert.deepEqual(get_persistent_storage(request.sessionid), null);
         });
     });
 
     describe('cookie path', function() {
-        it('setup', function() {
+        it('server', () => {
             ++url.port;
             session = new Session(conn, {
                 table_name: 'session',
                 domain: '127.0.0.1:8081',
                 path: '/session',
             });
-            //session.store.setup();
-        });
-
-        it('server', () => {
             let srv = new http.Server(url.port, [
+                r => { request = r },
                 session.cookie_filter,
                 {
                     '^/user$': (r) => r.session && (r.session.username = r.query.username),
@@ -323,7 +315,6 @@ describe('session', () => {
                     '^/remove$': (r) => session.remove(),
                     '^/session$': (r) => r.response.write(r.sessionid),
                 },
-                r => session._req = r,
             ]);
             srv.asyncRun();
         });
@@ -333,41 +324,35 @@ describe('session', () => {
 
             let res = client.get(url.host + '/user?username=lion');
 
-            print(res.data.toString())
-            assert.equal(session._req.sessionid, undefined);
-            assert.equal(session._req.session, undefined);
+            assert.equal(JSON.parse(res.data.toString()).status, 406);
+            assert.equal(request.session, undefined);
             assert.equal(res.cookies.length, 0);
-
-            assert.deepEqual(session.store.get(session._req.sessionid), null);
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), null);
-            wait();
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), null);
 
             res = client.get(url.host + '/session');
 
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(JSON.stringify(session._req.session), '{}');
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(JSON.stringify(request.session), '{}');
             let cookie = res.cookies[0];
             assert.equal(cookie.name, 'sessionID');
-            assert.equal(cookie.value, session._req.sessionid);
+            assert.equal(cookie.value, request.sessionid);
 
             res = client.get(url.host + '/user?username=lion');
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(session._req.session.username, 'lion');
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(request.session.username, 'lion');
 
             res = client.get(url.host + '/get');
 
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(session._req.session.username, 'lion');
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(request.session.username, 'lion');
             assert.equal(res.data.toString(), 'lion');
             cookie = res.cookies[0];
             assert.equal(cookie.name, 'sessionID');
-            assert.equal(cookie.value, session._req.sessionid);
+            assert.equal(cookie.value, request.sessionid);
 
-            assert.deepEqual(session.store.get(session._req.sessionid), {username: 'lion'});
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), null);
+            assert.deepEqual(session.get(request.sessionid), {username: 'lion'});
+            assert.deepEqual(get_persistent_storage(request.sessionid), null);
             wait();
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), {username: 'lion'});
+            assert.deepEqual(get_persistent_storage(request.sessionid), {username: 'lion'});
         });
 
     });
@@ -377,35 +362,23 @@ describe('session', () => {
             return JSON.parse(res.data.toString())[key];
         }
 
-        it('no path in options', function() {
-            assert.throws(() => new Session(conn, {
-                cookie: false,
-            }) , 'set session to api mode without path is not allowed');
-        });
-
-        it('setup', function() {
+        it('server', () => {
             ++url.port;
             session = new Session(conn, {
                 table_name: 'session',
                 domain: '127.0.0.1:8081',
                 path: '/session',
-                cookie: false,
             });
-            //session.store.setup();
-        });
-
-        it('server', () => {
             let srv = new http.Server(url.port, [
+                r => { request = r },
                 session.api_filter,
                 {
-                    //'^/.*$': (r) => {print('hier')},
                     '^/session$': (r) => {},
                     '^/user$': (r) => r.session && (r.session.username = r.query.username),
                     '^/get$': (r) => r.response.write(JSON.stringify({username: r.session.username})),
                     '^/del$': (r) => delete r.session.username,
                     '^/remove$': (r) => session.remove(r.sessionid),
                 },
-                r => session._req = r,
             ]);
             srv.asyncRun();
         });
@@ -414,33 +387,32 @@ describe('session', () => {
             let res = new http.Client().get(url.host + '/user');
 
             assert.equal(get_value(res, 'status'), 406);
-            assert.equal(session._req.sessionid, undefined);
-            assert.equal(session._req.session, undefined);
+            assert.equal(request.session, undefined);
 
             res = new http.Client().get(url.host + '/session');
 
             let sid = get_value(res);
             assert.equal(sid.length, 32);
-            assert.equal(session._req.sessionid, sid);
-            assert.deepEqual(session._req.session, {});
+            assert.equal(request.sessionid, sid);
+            assert.deepEqual(request.session, {});
         });
 
         it('request with invalid sessionID', () => {
             let res = new http.Client().get(url.host + '/user?username=lion');
 
             assert.equal(get_value(res, 'status'), 406);
-            assert.equal(session._req.sessionid, undefined);
-            assert.equal(session._req.session, undefined);
+            assert.equal(request.sessionid, undefined);
+            assert.equal(request.session, undefined);
 
             new http.Client().get(url.host + '/user?username=lion', {
                 sessionID: '0123456789abcdef0123456789abcdef'});
 
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(session._req.sessionid, '0123456789abcdef0123456789abcdef');
-            assert.equal(session._req.session, undefined);
-            assert.equal(session.store.get(session._req.sessionid), null);
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(request.sessionid, '0123456789abcdef0123456789abcdef');
+            assert.equal(request.session, undefined);
+            assert.equal(session.get(request.sessionid), null);
             wait();
-            assert.equal(get_persistent_storage(session._req.sessionid), null);
+            assert.equal(get_persistent_storage(request.sessionid), null);
         });
 
         it('get sessionID with invalid sessionID', () => {
@@ -448,36 +420,36 @@ describe('session', () => {
             let sid = JSON.parse(res.data.toString()).sessionID;
 
             assert.equal(sid.length, 32);
-            assert.equal(session._req.sessionid, sid);
-            assert.deepEqual(session._req.session, {});
+            assert.equal(request.sessionid, sid);
+            assert.deepEqual(request.session, {});
 
-            assert.equal(sid, session._req.sessionid);
+            assert.equal(sid, request.sessionid);
 
-            assert.deepEqual(session.store.get(session._req.sessionid), {});
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), null);
+            assert.deepEqual(session.get(request.sessionid), {});
+            assert.deepEqual(get_persistent_storage(request.sessionid), null);
             wait();
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), {});
+            assert.deepEqual(get_persistent_storage(request.sessionid), {});
 
             res = new http.Client().get(url.host + '/session', {
                 sessionID: '0123456789abcdef0123456789abcdef'});
             sid = JSON.parse(res.data.toString()).sessionID;
 
             assert.equal(sid.length, 32);
-            assert.equal(session._req.sessionid, sid);
-            assert.deepEqual(session._req.session, {});
+            assert.equal(request.sessionid, sid);
+            assert.deepEqual(request.session, {});
 
-            assert.equal(sid, session._req.sessionid);
+            assert.equal(sid, request.sessionid);
 
-            assert.deepEqual(session.store.get(session._req.sessionid), {});
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), null);
+            assert.deepEqual(session.get(request.sessionid), {});
+            assert.deepEqual(get_persistent_storage(request.sessionid), null);
             wait();
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), {});
+            assert.deepEqual(get_persistent_storage(request.sessionid), {});
         });
 
         it('illegal sessionID', () => {
             let res = new http.Client().get(url.host + '/session', {sessionID: '0123456789abcdef0123456789abcdef'});
-            assert.equal(session._req.sessionid.length, 32);
-            assert.notEqual(session._req.sessionid, '0123456789abcdef0123456789abcdef');
+            assert.equal(request.sessionid.length, 32);
+            assert.notEqual(request.sessionid, '0123456789abcdef0123456789abcdef');
         });
 
         it('request with sessionID', () => {
@@ -486,40 +458,40 @@ describe('session', () => {
             let res = client.get(url.host + '/user?username=lion', {sessionID: sid});
 
             assert.equal(sid.length, 32);
-            assert.equal(session._req.sessionid, sid);
-            assert.equal(session._req.session.username, 'lion');
+            assert.equal(request.sessionid, sid);
+            assert.equal(request.session.username, 'lion');
 
             res = client.get(url.host + '/get', {sessionID: sid});
 
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(session._req.session.username, 'lion');
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(request.session.username, 'lion');
             assert.equal(JSON.parse(res.data.toString()).username, 'lion');
 
-            assert.deepEqual(session.store.get(session._req.sessionid), {username: 'lion'});
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), null);
+            assert.deepEqual(session.get(request.sessionid), {username: 'lion'});
+            assert.deepEqual(get_persistent_storage(request.sessionid), null);
             wait();
-            assert.deepEqual(get_persistent_storage(session._req.sessionid), {username: 'lion'});
+            assert.deepEqual(get_persistent_storage(request.sessionid), {username: 'lion'});
         });
 
         it('remove session', () => {
             let client = new http.Client();
             let sid = get_value(client.get(url.host + '/session'));
 
-            assert.equal(session._req.sessionid.length, 32);
-            assert.deepEqual(session._req.session, {});
-            assert.deepEqual(session.store.get(session._req.sessionid), {});
-            assert.equal(session._req.session.username, undefined);
+            assert.equal(request.sessionid.length, 32);
+            assert.deepEqual(request.session, {});
+            assert.deepEqual(session.get(request.sessionid), {});
+            assert.equal(request.session.username, undefined);
 
             let res = client.get(url.host + '/remove', {sessionID: sid});
 
-            assert.equal(session._req.sessionid, undefined);
-            assert.equal(session._req.session, undefined);
+            assert.equal(request.sessionid, undefined);
+            assert.equal(request.session, undefined);
 
             res = client.get(url.host + '/get', {sessionID: sid});
 
-            assert.equal(session._req.sessionid, sid);
-            assert.equal(session._req.session, undefined);
-            assert.equal(session.store.get(session._req.sessionid), null);
+            assert.equal(request.sessionid, sid);
+            assert.equal(request.session, undefined);
+            assert.equal(session.get(request.sessionid), null);
             assert.equal(get_persistent_storage(sid), null);
             wait();
             assert.equal(get_persistent_storage(sid), null);
@@ -530,42 +502,42 @@ describe('session', () => {
             let sid = get_value(client.get(url.host + '/session'));
             client.get(url.host + '/user?username=lion', {sessionID: sid});
 
-            assert.equal(session._req.sessionid, sid);
-            assert.deepEqual(session._req.session, {username: 'lion'});
-            assert.deepEqual(session.store.get(session._req.sessionid), {username: 'lion'});
+            assert.equal(request.sessionid, sid);
+            assert.deepEqual(request.session, {username: 'lion'});
+            assert.deepEqual(session.get(request.sessionid), {username: 'lion'});
 
             let res = client.get(url.host + '/del', {sessionID: sid});
 
-            assert.deepEqual(session._req.session, {});
+            assert.deepEqual(request.session, {});
             wait();
             assert.deepEqual(get_persistent_storage(sid), {});
 
             res = client.get(url.host + '/get', {sessionID: sid});
 
-            assert.equal(session._req.session.username, undefined);
-            assert.deepEqual(session.store.get(session._req.sessionid), {});
+            assert.equal(request.session.username, undefined);
+            assert.deepEqual(session.get(request.sessionid), {});
 
-            assert.deepEqual(session.store.get(session._req.sessionid), {});
+            assert.deepEqual(session.get(request.sessionid), {});
             wait();
-            assert.deepEqual(session.store.get(session._req.sessionid), {});
+            assert.deepEqual(session.get(request.sessionid), {});
         });
 
         it('adjacent requests', () => {
             let client = new http.Client();
             let sid = get_value(client.get(url.host + '/session'));
             let res = client.get(url.host + '/user?username=lion1', {sessionID: sid});
-            assert.equal(session._req.session.username, 'lion1');
+            assert.equal(request.session.username, 'lion1');
 
             res = client.get(url.host + '/user?username=lion2', {sessionID: sid});
-            assert.equal(session._req.session.username, 'lion2');
+            assert.equal(request.session.username, 'lion2');
 
             res = client.get(url.host + '/user?username=lion3', {sessionID: sid});
-            assert.equal(session._req.session.username, 'lion3');
+            assert.equal(request.session.username, 'lion3');
 
             res = client.get(url.host + '/user?username=lion4', {sessionID: sid});
-            assert.equal(session._req.session.username, 'lion4');
+            assert.equal(request.session.username, 'lion4');
 
-            assert.deepEqual(session.store.get(session._req.sessionid), {username: 'lion4'});
+            assert.deepEqual(session.get(request.sessionid), {username: 'lion4'});
             assert.deepEqual(get_persistent_storage(sid), null);
             wait();
             assert.deepEqual(get_persistent_storage(sid), {username: 'lion4'});
@@ -580,43 +552,43 @@ describe('session', () => {
 
             let res_a = client_a.get(url.host + '/user?username=lion', {sessionID: sid_a});
 
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(session._req.session.username, 'lion');
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(request.session.username, 'lion');
             assert.equal(res_a.data, undefined);
-            assert.equal(sid_a, session._req.sessionid);
+            assert.equal(sid_a, request.sessionid);
 
             let res_b = client_b.get(url.host + '/user?username=lion', {sessionID: sid_b});
 
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(session._req.session.username, 'lion');
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(request.session.username, 'lion');
             assert.equal(res_b.data, undefined);
-            assert.equal(sid_b, session._req.sessionid);
+            assert.equal(sid_b, request.sessionid);
 
             res_a = client_a.get(url.host + '/user?username=lion-a', {sessionID: sid_a});
 
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(session._req.session.username, 'lion-a');
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(request.session.username, 'lion-a');
             assert.equal(res_a.data, undefined);
 
             res_b = client_b.get(url.host + '/user?username=lion-b', {sessionID: sid_b});
 
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(session._req.session.username, 'lion-b');
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(request.session.username, 'lion-b');
             assert.equal(res_b.data, undefined);
 
             res_a = client_a.get(url.host + '/get', {sessionID: sid_a});
 
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(session._req.session.username, 'lion-a');
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(request.session.username, 'lion-a');
             assert.deepEqual(JSON.parse(res_a.data.toString()), {username: 'lion-a'});
-            assert.deepEqual(session.store.get(res_a.firstHeader('sessionID')), null);
+            assert.deepEqual(session.get(res_a.firstHeader('sessionID')), null);
 
             res_b = client_b.get(url.host + '/get', {sessionID: sid_b});
 
-            assert.equal(session._req.sessionid.length, 32);
-            assert.equal(session._req.session.username, 'lion-b');
+            assert.equal(request.sessionid.length, 32);
+            assert.equal(request.session.username, 'lion-b');
             assert.deepEqual(JSON.parse(res_b.data.toString()), {username: 'lion-b'});
-            assert.deepEqual(session.store.get(res_b.firstHeader('sessionID')), null);
+            assert.deepEqual(session.get(res_b.firstHeader('sessionID')), null);
 
             wait();
             assert.deepEqual(get_persistent_storage(sid_a), {username: 'lion-a'});
