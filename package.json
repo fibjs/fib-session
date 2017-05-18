@@ -1,0 +1,24 @@
+{
+  "name": "fib-session",
+  "version": "0.1.0",
+  "description": "Simple session middleware for fibjs",
+  "main": "lib/index.js",
+  "repository": "git://github.com/fibjs/fib-session.git",
+  "author": "Liu Hu <lion@9465.net>",
+  "homepage": "https://github.com/fibjs/fib-session",
+  "license": "MIT",
+  "keywords": [
+    "session",
+    "fibjs"
+  ],
+  "scripts": {
+    "ci": "fibjs test.js"
+  },
+  "ci": {
+    "type": "travis"
+  },
+  "dependencies": {
+    "fib-kv": "^1.0.0",
+    "fib-pool": "^1.0.5"
+  }
+}
