@@ -14,7 +14,8 @@ let print = console.warn.bind(console);
 
 describe('session', () => {
     // the assertions before `wait()` might fail if the leading operations take too long to finish
-    let wait = function(n = 20) { coroutine.sleep(n) };
+    let delay = 100;
+    let wait = function(n = delay) { coroutine.sleep(n) };
     let get_persistent_storage = function(sid) {
         let rs = conn.execute('select * from session where k = ?', sid);
         return rs.length ? JSON.parse(rs[0].v) : null;
@@ -368,6 +369,7 @@ describe('session', () => {
                 table_name: 'session',
                 domain: '127.0.0.1:8081',
                 path: '/session',
+                session_buffer_timeout: delay*2,
             });
             let srv = new http.Server(url.port, [
                 r => { request = r },
@@ -378,18 +380,24 @@ describe('session', () => {
                     '^/get$': (r) => r.response.write(JSON.stringify({username: r.session.username})),
                     '^/del$': (r) => delete r.session.username,
                     '^/remove$': (r) => session.remove(r.sessionid),
+                    '^/kv$': (r) => {
+                        coroutine.sleep(delay*4);
+                        r.session[r.query.k] = r.query.v;
+                    },
                 },
             ]);
             srv.asyncRun();
         });
 
-        it('get sessionID without/with the given path', () => {
+        it('get sessionID without the given path', () => {
             let res = new http.Client().get(url.host + '/user');
 
             assert.equal(get_value(res, 'status'), 406);
             assert.equal(request.session, undefined);
+        });
 
-            res = new http.Client().get(url.host + '/session');
+        it('get sessionID with the given path', () => {
+            let res = new http.Client().get(url.host + '/session');
 
             let sid = get_value(res);
             assert.equal(sid.length, 32);
@@ -593,6 +601,34 @@ describe('session', () => {
             wait();
             assert.deepEqual(get_persistent_storage(sid_a), {username: 'lion-a'});
             assert.deepEqual(get_persistent_storage(sid_b), {username: 'lion-b'});
+        });
+
+        it('simultaneous set session', () => {
+            let client = new http.Client();
+            let sid = get_value(client.get(url.host + 'session'));
+
+            let res_a;
+            setTimeout(() => {
+                res_a = client.get(url.host + '/kv?k=username&v=lion', {sessionID: sid});
+            }, 0);
+
+            wait(delay*3);
+            let res_b = client.get(url.host + '/kv?k=password&v=9465', {sessionID: sid});
+
+            wait(delay*2);
+
+            assert.deepEqual(request.session, {password: '9465'});
+
+            setTimeout(() => {
+                res_a = client.get(url.host + '/kv?k=username&v=lion', {sessionID: sid});
+            }, 0);
+
+            wait(delay*2);
+            res_b = client.get(url.host + '/kv?k=password&v=9465', {sessionID: sid});
+
+            assert.deepEqual(request.session, {username: 'lion', password: '9465'});
+
+            wait(delay*4)
         });
 
     });
