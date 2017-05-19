@@ -631,6 +631,47 @@ describe('session', () => {
             wait(delay*4)
         });
 
+        it('get() resets TTL', () => {
+            // sid
+
+            // req-a
+            // req-b get //
+            // req-a set @ expire+
+            // req-b get // not updated
+
+            // req-a
+            // req-b get //
+            // req-a get // renew object TTL
+            // req-a set @ expire+
+            // req-b get // not updated
+            
+            let client = new http.Client();
+            let sid = get_value(client.get(url.host + 'session'));
+
+            let res_a;
+            setTimeout(() => {
+                res_a = client.get(url.host + '/kv?k=username&v=lion', {sessionID: sid});
+            }, 0);
+
+            wait(delay*3);
+            let res_b = client.get(url.host + '/kv?k=password&v=9465', {sessionID: sid});
+
+            wait(delay*2);
+
+            assert.deepEqual(request.session, {password: '9465'});
+
+            setTimeout(() => {
+                res_a = client.get(url.host + '/kv?k=username&v=lion', {sessionID: sid});
+            }, 0);
+
+            wait(delay*2);
+            res_b = client.get(url.host + '/kv?k=password&v=9465', {sessionID: sid});
+
+            assert.deepEqual(request.session, {username: 'lion', password: '9465'});
+
+            wait(delay*4)
+        });
+
     });
 
 });
