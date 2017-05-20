@@ -369,7 +369,7 @@ describe('session', () => {
                 table_name: 'session',
                 domain: '127.0.0.1:8081',
                 path: '/session',
-                session_buffer_timeout: delay*2,
+                session_cache_timeout: delay*2,
             });
             let srv = new http.Server(url.port, [
                 r => { request = r },
@@ -603,7 +603,7 @@ describe('session', () => {
             assert.deepEqual(get_persistent_storage(sid_b), {username: 'lion-b'});
         });
 
-        it('simultaneous set session', () => {
+        it('simultaneous set the same session', () => {
             let client = new http.Client();
             let sid = get_value(client.get(url.host + 'session'));
 
