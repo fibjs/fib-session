@@ -113,7 +113,7 @@ describe('session', () => {
             assert.deepEqual(get_persistent_storage(request.sessionid), {username: 'lion'});
         });
 
-        it('illegal sessionID', () => {
+        it('invalid sessionID', () => {
             let client = new http.Client();
             let res = client.get(url.host + '/user?username=lion');
 
@@ -298,7 +298,7 @@ describe('session', () => {
         });
     });
 
-    describe('cookie path', function() { return;
+    describe('cookie path', function() {
         it('server', () => {
             ++url.port;
             session = new Session(conn, {
@@ -358,7 +358,7 @@ describe('session', () => {
 
     });
 
-    describe('api', function() { return;
+    describe('api', function() {
         function get_value(res, key = 'sessionID') {
             return JSON.parse(res.data.toString())[key];
         }
