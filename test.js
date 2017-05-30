@@ -3,47 +3,49 @@ test.setup();
 
 let Session = require('./');
 
-let fs = require('fs');
 let db = require('db');
-var pool = require('fib-pool');
+let fs = require('fs');
 let http = require('http');
+let kv = require('fib-kv');
+let pool = require('fib-pool');
 
+let util = require('util');
 let coroutine = require('coroutine');
 
-let print = console.warn.bind(console);
+// the assertions before `wait()` might fail if the leading operations take too long to finish
+let delay = 105;
+let wait = function(n = delay) { coroutine.sleep(n) };
+let url = {
+    protocol: 'http',
+    domain: '127.0.0.1',
+    port: 8080,
+    get ['host']() { return this.protocol + '://' + this.domain + ':' + this.port },
+};
+let conf = {
+    user: 'username',
+    password: 'password',
+    database: 'test',
+};
 
-describe('session', () => {
-    // the assertions before `wait()` might fail if the leading operations take too long to finish
-    let delay = 100;
-    let wait = function(n = delay) { coroutine.sleep(n) };
-    let get_persistent_storage = function(sid) {
-        let rs = conn.execute('select * from session where k = ?', sid);
-        return rs.length ? JSON.parse(rs[0].v) : null;
-    };
+let conn;
+let session;
+let request;
 
-    let url = {
-        protocol: 'http',
-        domain: '127.0.0.1',
-        port: 8080,
-        get ['host']() { return this.protocol + '://' + this.domain + ':' + this.port },
-    };
+let kv_db;
+let get_persistent_storage = (sid) => JSON.parse(kv_db.get(sid));
 
-    let conn;
-    let session;
-    let request;
+function session_test(name, opts, _before, _after) {
+    describe(name, () => {
 
-    function test(name, opts, _before, _after) {
-        //describe(name
-
-        before(_before);
+        before(() => kv_db = new kv(_before(), opts));
         after(_after);
 
         describe('cookie auto', function() {
             it('server', () => {
                 ++url.port;
-                session = new Session(conn, {
-                    table_name: 'session',
-                });
+                let optsNoPath = util.clone(opts);
+                delete optsNoPath.path;
+                session = new Session(conn, optsNoPath);
                 let srv = new http.Server(url.port, [
                     r => { request = r },
                     session.cookie_filter,
@@ -293,11 +295,7 @@ describe('session', () => {
         describe('cookie path', function() {
             it('server', () => {
                 ++url.port;
-                session = new Session(conn, {
-                    table_name: 'session',
-                    domain: '127.0.0.1:8081',
-                    path: '/session',
-                });
+                session = new Session(conn, opts);
                 let srv = new http.Server(url.port, [
                     r => { request = r },
                     session.cookie_filter,
@@ -357,12 +355,7 @@ describe('session', () => {
 
             it('server', () => {
                 ++url.port;
-                session = new Session(conn, {
-                    table_name: 'session',
-                    domain: '127.0.0.1:8081',
-                    path: '/session',
-                    session_cache_timeout: delay*2,
-                });
+                session = new Session(conn, opts);
                 let srv = new http.Server(url.port, [
                     r => { request = r },
                     session.api_filter,
@@ -412,7 +405,7 @@ describe('session', () => {
                 assert.equal(request.session, undefined);
                 assert.equal(session.get(request.sessionid), null);
                 wait();
-                assert.equal(get_persistent_storage(request.sessionid), null);
+                assert.deepEqual(get_persistent_storage(request.sessionid), null);
             });
 
             it('get sessionID with invalid sessionID', () => {
@@ -492,9 +485,9 @@ describe('session', () => {
                 assert.equal(request.sessionid, sid);
                 assert.equal(request.session, undefined);
                 assert.equal(session.get(request.sessionid), null);
-                assert.equal(get_persistent_storage(sid), null);
+                assert.deepEqual(get_persistent_storage(sid), null);
                 wait();
-                assert.equal(get_persistent_storage(sid), null);
+                assert.deepEqual(get_persistent_storage(sid), null);
             });
 
             it('delete session property', () => {
@@ -666,23 +659,62 @@ describe('session', () => {
             });
 
         });
-    }
 
-    test('sqlite', {},
-         () => conn = db.openSQLite('test.db'),
-         () => {
-             conn.close();
-             try { fs.unlink('test.db') } catch(e) {}
-         });
+    });
 
-    // before(() => conn = pool(() => db.openSQLite('test.db'), 10, 1*1000));
-    // after(() => {
-    //     let time_limit = new Date().getTime() + 3000;
-    //     while (conn.connections() && new Date().getTime() < time_limit)
-    //         coroutine.sleep(10);
-    //     try { fs.unlink('test.db') } catch(e) {}
-    // });
+}
 
-});
+session_test(
+    'SQLite', {
+        table_name: 'session',
+        domain: url.domain,
+        path: '/session',
+        session_cache_timeout: delay*2,
+    },
+    () => conn = db.openSQLite('test.db'),
+    () => {
+        conn.close();
+        try { fs.unlink('test.db') } catch(e) {}
+    });
+
+session_test(
+    'SQLite pool', {
+        table_name: 'session',
+        domain: url.domain,
+        path: '/session',
+        session_cache_timeout: delay*2,
+    },
+    () => conn = pool(() => db.openSQLite('test.db'), 10, 1*1000),
+    () => {
+        let time_limit = new Date().getTime() + 3000;
+        while (conn.connections() && new Date().getTime() < time_limit)
+            coroutine.sleep(10);
+        try { fs.unlink('test.db') } catch(e) {}
+    });
+
+session_test(
+    'MySQL', {
+        table_name: 'session',
+        domain: url.domain,
+        path: '/session',
+        session_cache_timeout: delay*2,
+    },
+    () => conn = db.openMySQL(`mysql://${conf.user}:${conf.password}@localhost/${conf.database}`),
+    () => {
+        try {conn.execute('DROP TABLE session')} catch(e) {}
+        conn.close();
+    });
+
+session_test(
+    'MySQL pool', {
+        table_name: 'session',
+        domain: url.domain,
+        path: '/session',
+        session_cache_timeout: delay*2,
+    },
+    () => conn = pool(() => db.openMySQL(`mysql://${conf.user}:${conf.password}@localhost/${conf.database}`), 10, 1*1000),
+    () => {
+        try {conn.execute('DROP TABLE session')} catch(e) {}
+    });
 
 test.run(console.DEBUG);
