@@ -12,16 +12,19 @@ let pool = require('fib-pool');
 let util = require('util');
 let coroutine = require('coroutine');
 
-let print = console.warn.bind(console);
-
 // the assertions before `wait()` might fail if the leading operations take too long to finish
-let delay = 100;
+let delay = 105;
 let wait = function(n = delay) { coroutine.sleep(n) };
 let url = {
     protocol: 'http',
     domain: '127.0.0.1',
     port: 8080,
     get ['host']() { return this.protocol + '://' + this.domain + ':' + this.port },
+};
+let conf = {
+    user: 'username',
+    password: 'password',
+    database: 'test',
 };
 
 let conn;
@@ -687,6 +690,31 @@ session_test(
         while (conn.connections() && new Date().getTime() < time_limit)
             coroutine.sleep(10);
         try { fs.unlink('test.db') } catch(e) {}
+    });
+
+session_test(
+    'MySQL', {
+        table_name: 'session',
+        domain: url.domain,
+        path: '/session',
+        session_cache_timeout: delay*2,
+    },
+    () => conn = db.openMySQL(`mysql://${conf.user}:${conf.password}@localhost/${conf.database}`),
+    () => {
+        try {conn.execute('DROP TABLE session')} catch(e) {}
+        conn.close();
+    });
+
+session_test(
+    'MySQL pool', {
+        table_name: 'session',
+        domain: url.domain,
+        path: '/session',
+        session_cache_timeout: delay*2,
+    },
+    () => conn = pool(() => db.openMySQL(`mysql://${conf.user}:${conf.password}@localhost/${conf.database}`), 10, 1*1000),
+    () => {
+        try {conn.execute('DROP TABLE session')} catch(e) {}
     });
 
 test.run(console.DEBUG);
