@@ -13,7 +13,7 @@ npm install fib-session [--save]
 npm run ci
 ```
 
-## Creating a session middleware
+## Creating a cookie-based session middleware
 
 ```js
 var Session = require('fib-session')
@@ -21,27 +21,34 @@ var session = new Session(conn, opts);
 
 var srv = new http.Server(8000, [
     session.cookie_filter, // use session ID via cookie
-    session.api_filter, // use session ID via api
     {
         // routers
-        '^/foo$': (r) => {},
+        '^/foo$': (r) => {
+            var v = r.session.v;
+        },
         ...
     }
 ]);
 ```
 
-<!--
-- domain: only allocate sessionid while visiting the given domain
--->
-- cookie-key: sessionID (default)
-- path: only allocate sessionid while visiting the given path
-- api mode:
-    - a session ID can be get via a request on the given path
-    - a valid session ID is required in http request header
-- key `__sid__` is reserved in session
-- if session module cannot generate a valid session ID,
-  the session ID will be set to `false`
-  
+## Creating a api session middleware
+
+```js
+var Session = require('fib-session')
+var session = new Session(conn, opts);
+
+var srv = new http.Server(8000, [
+    session.api_filter, // use api session filter
+    {
+        // routers
+        '^/foo$': (r) => {
+            var v = r.session.v;
+        },
+        '^/get-token$': session.api_token
+    }
+]);
+```
+
 *Both kv options and sesion options are in the same object.*
 
 kv-store options
@@ -68,10 +75,22 @@ session options
 | session_cache_timeout(ms) |             900000 | clear session objects which is not operated for a period of time from buffer, default 15 minutes |
 | session_cache_delay       |                100 | time delay for write session to persistent storage                                               |
 | session_id_name           |        "sessionID" |                                                                                                  |
-| session_id_path           |   '/session' (api) | request path to allocate session id, api_filter must have an id_path                             |
-|                           | undefined (cookie) | cookie_filter will allocate session id automatically if id_path is not set                       |
 
 - session cache is used to keep session consistency among http requires.
 - the timeout of session cache must be larger than its delay
 
 - The client-side has only the session ID. The session is operated on the server-side.
+
+## Methods
+
+### session.setup()
+setup the backend database.
+
+### v = session.cookie_filter
+returns a cookie-based session filter.
+
+### session.api_filter
+returns a header-based session filter.
+
+### session.api_token
+returns an api handler that gets a new session ID.
