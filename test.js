@@ -120,9 +120,7 @@ function session_test(name, opts, _before, _after) {
                 assert.equal(request_session.username, 'lion');
 
                 assert.equal(res.data.toString(), 'lion');
-                cookie = res.cookies[0];
-                assert.equal(cookie.name, 'sessionID');
-                assert.equal(cookie.value, request_sessionid);
+                assert.equal(res.cookies.length, 0);
 
                 assert.deepEqual(session.get(request_sessionid), {
                     username: 'lion'
@@ -176,9 +174,7 @@ function session_test(name, opts, _before, _after) {
 
                 assert.equal(request_session.username, undefined);
                 assert.equal(request_sessionid.length, 32);
-                cookie = res.cookies[0];
-                assert.equal(cookie.value.length, 32);
-                assert.equal(request_session.username, null);
+                assert.equal(res.cookies.length, 0);
 
                 assert.deepEqual(session.get(request_sessionid), {});
                 assert.deepEqual(get_persistent_storage(request_sessionid), {
@@ -194,8 +190,7 @@ function session_test(name, opts, _before, _after) {
 
                 assert.deepEqual(session.get(request_sessionid), {});
 
-                cookie = res.cookies[0];
-                assert.equal(cookie.value.length, 32);
+                assert.equal(res.cookies.length, 0);
                 assert.equal(request_session.username, null);
 
                 assert.deepEqual(session.get(request_sessionid), {});
@@ -254,27 +249,21 @@ function session_test(name, opts, _before, _after) {
                 assert.equal(request_sessionid.length, 32);
                 assert.equal(request_session.username, 'lion-a');
                 assert.equal(res_a.data, undefined);
-                cookie_a = res_a.cookies[0];
-                assert.equal(cookie_a.name, 'sessionID');
-                assert.equal(cookie_a.value, request_sessionid);
+                assert.equal(res_a.cookies.length, 0);
 
                 res_b = client_b.get(url.host + '/user?username=lion-b');
 
                 assert.equal(request_sessionid.length, 32);
                 assert.equal(request_session.username, 'lion-b');
                 assert.equal(res_b.data, undefined);
-                cookie_b = res_b.cookies[0];
-                assert.equal(cookie_b.name, 'sessionID');
-                assert.equal(cookie_b.value, request_sessionid);
+                assert.equal(res_b.cookies.length, 0);
 
                 res_a = client_a.get(url.host + '/get');
 
                 assert.equal(request_sessionid.length, 32);
                 assert.equal(request_session.username, 'lion-a');
                 assert.equal(res_a.data.toString(), 'lion-a');
-                cookie_a = res_a.cookies[0];
-                assert.equal(cookie_a.name, 'sessionID');
-                assert.equal(cookie_a.value, request_sessionid);
+                assert.equal(res_a.cookies.length, 0);
 
                 assert.deepEqual(session.get(cookie_a.value), {
                     username: 'lion-a'
@@ -286,9 +275,7 @@ function session_test(name, opts, _before, _after) {
                 assert.equal(request_sessionid.length, 32);
                 assert.equal(request_session.username, 'lion-b');
                 assert.equal(res_b.data.toString(), 'lion-b');
-                cookie_b = res_b.cookies[0];
-                assert.equal(cookie_b.name, 'sessionID');
-                assert.equal(cookie_b.value, request_sessionid);
+                assert.equal(res_b.cookies.length, 0);
 
                 assert.deepEqual(session.get(cookie_b.value), {
                     username: 'lion-b'
@@ -386,9 +373,7 @@ function session_test(name, opts, _before, _after) {
                 assert.equal(request_sessionid.length, 32);
                 assert.equal(request_session.username, 'lion');
                 assert.equal(res.data.toString(), 'lion');
-                cookie = res.cookies[0];
-                assert.equal(cookie.name, 'sessionID');
-                assert.equal(cookie.value, request_sessionid);
+                assert.equal(res.cookies.length, 0);
 
                 assert.deepEqual(session.get(request_sessionid), {
                     username: 'lion'
