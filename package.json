@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "fib-kv": "^1.0.5",
-    "fib-pool": "^1.1.0"
+    "fib-pool": "^1.1.0",
+    "fib-jws": "^0.1.0"
   }
 }

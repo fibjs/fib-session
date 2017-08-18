@@ -13,7 +13,7 @@ let util = require('util');
 let coroutine = require('coroutine');
 
 // the assertions before `wait()` might fail if the leading operations take too long to finish
-let delay = 105;
+let delay = 125;
 let wait = function (n = delay) {
     coroutine.sleep(n)
 };
@@ -809,6 +809,288 @@ function session_test(name, opts, _before, _after) {
 
         });
 
+        describe('JSON Web Token', function () {
+            let jwt_req_session = null;
+            let session_jwt_key = '98DE76B1'; //HS256是对称签名，所以加密和验证的key一样
+            before(() => {
+                session = new Session(conn, {
+                    session_jwt_algo: 'HS256', 
+                    session_jwt_key: session_jwt_key
+                });
+                session.setup();
+            });
+            it('check token', () => {
+                ++url.port;
+                let srv = new http.Server(url.port, [
+                    session.cookie_filter,
+                    (r) => {
+                        if(r.address != '/login' && (!r.session || !r.session.id>0)) {
+                            // redirect
+                            // r.response.redirect('/login');
+                            r.response.write('redirect'); //for test
+                            r.end();
+                        }
+                    },
+                    {
+                        '^/jwt$': (r) => {
+                            jwt_req_session = r.session;
+                            r.response.write('jwt')
+                        },
+                        '^/login$': (r) => {
+                            session.setTokenCookie(r, { id: 12345, name: "Frank" }, session_jwt_key);
+                            jwt_req_session = r.session;
+                            r.response.write('login')
+                        },
+                        '^/jwt_update$': (r) => {
+                            try {
+                                r.session.color = 'red';
+                            }catch(e) {
+                                r.response.write(e.message);
+                            }
+                        },
+                        '^/jwt_delete$': (r) => {
+                            try {
+                                delete r.session.color;
+                            }catch(e) {
+                                r.response.write(e.message);
+                            }
+                        }
+                    }
+                ]);
+                srv.asyncRun();
+                let client = new http.Client();
+                //not login
+                res = client.get(url.host + '/jwt');
+                var txt = res.data.toString();
+                assert.equal(txt, 'redirect');
+                //login
+                res = client.get(url.host + '/login');
+                var txt = res.data.toString();
+                assert.equal(txt, 'login');
+                var b = true;
+                for(var i=0; res.cookies && i<res.cookies.length; i++) {
+                    if(res.cookies[i] && res.cookies[i].name == 'sessionID') {
+                        assert.equal(res.cookies[i].value, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MTIzNDUsIm5hbWUiOiJGcmFuayJ9.adE0u7POp1NG1GHQjZUGb9lfovw9-GdEVusqh2Sc0-M');
+                        b = false;
+                    }
+                }
+                assert.equal(b, false, 'JSON Web Token is not correct');
+                assert.equal(jwt_req_session.id, 12345);
+                assert.equal(jwt_req_session.name, "Frank");
+                //after login
+                res = client.get(url.host + '/jwt');
+                var txt = res.data.toString();
+                assert.equal(txt, 'jwt');
+                assert.equal(jwt_req_session.id, 12345);
+                assert.equal(jwt_req_session.name, "Frank");
+                // jwt update throw exception
+                res = client.get(url.host + '/jwt_update');
+                var txt = res.data.toString();
+                assert.equal(txt, "Can't modify the JSON Web Token.");
+                // jwt delete throw exception
+                res = client.get(url.host + '/jwt_delete');
+                var txt = res.data.toString();
+                assert.equal(txt, "Can't modify the JSON Web Token.");
+                var jwt_token = session.getToken({abc:'xyz'}, 'test');
+                assert.equal(jwt_token, 'eyJhbGciOiJIUzI1NiJ9.eyJhYmMiOiJ4eXoifQ.ltcUVSz3Np3ZSLpk7TwtTFFjlNY8X2nikCGcuF2ZMgE')
+            });
+        });
+        describe('api in JWT', function () {
+            var session_jwt_key = '98DE76B1-9';
+            var jwt_sign = 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MTIzNDUsIm5hbWUiOiJGcmFuayJ9.adE0u7POp1NG1GHQjZUGb9lfovw9-GdEVusqh2Sc0-M';
+            var jwt_session_data = {"id": 12345, "name": "Frank"};
+            before(() => {
+                session = new Session(conn, {
+                    session_jwt_algo: 'HS256', 
+                    session_jwt_key: session_jwt_key
+                });-9
+                session.setup();
+            });
+            function get_value(res, key = 'sessionID') {
+                return JSON.parse(res.data.toString())[key];
+            }
+            it('server', () => {
+                ++url.port;
+                let srv = new http.Server(url.port, [
+                    (r) => {
+                        try {
+                            session.api_filter(r);
+                        }catch(e) {
+                            r.response.status = 500;
+                            r.response.write(e.message);
+                            r.end();
+                        }
+                    },
+                    {
+                        '^/session$': (r) => {
+                            r.response.write('session-ok');
+                        },
+                        '^/user$': (r) => {
+                            session.setTokenCookie && session.setTokenCookie(r, {id: r.query.id||"1", username: r.query.username}, session_jwt_key);
+                        },
+                        '^/get$': (r) => r.response.write(JSON.stringify({
+                            username: r.session.username
+                        })),
+                        '^/del$': (r) => {
+                            try {
+                                delete r.session.username
+                            }catch(e) {
+                                r.response.status = 500;
+                                r.response.write(e.message);
+                                r.end();
+                            }
+                        }
+                    },
+                    r => {
+                        request_session = r.session;
+                        request_sessionid = r.sessionid;
+                    }
+                ]);
+                srv.asyncRun();
+            });
+            it('get sessionID without the given path', () => {
+                let res = new http.Client().get(url.host + '/user?id=300&username=lion');
+                //user login
+                assert.deepEqual(request_session, {
+                    "id": "300",
+                    "username": "lion"
+                });
+            });
+            var save_id;
+            it('request with two user sessionID', () => {
+                //user "hoo" login 
+                let res = new http.Client().get(url.host + '/user?id=50&username=hoo');
+                save_id = res.cookies[0].value;
+                //console.error('save_id:', res.cookies[0].value);
+                assert.equal(save_id, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjUwIiwidXNlcm5hbWUiOiJob28ifQ.ubTia0QE_D-aT8ziMShJEwgnbujatqTJC7amOhxabzw');
+                assert.deepEqual(request_session, {
+                    "id": "50",
+                    "username": "hoo"
+                });
+                //other user "lion" login
+                res = new http.Client().get(url.host + '/user?id=8&username=lion', {
+                    sessionID: save_id
+                });
+                //console.error('save_id2:', res.cookies[0].value);
+                assert.equal(request_sessionid, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjgiLCJ1c2VybmFtZSI6Imxpb24ifQ.bN9IiVDgy2qfQgndBv5SfyLSEotTw1RjK3hgjR-VJpM');
+                assert.deepEqual(request_session, {
+                    "id": "8",
+                    "username": "lion"
+                });
+                //jwt does not need to save to store
+                assert.deepEqual(session.get(request_sessionid), null);
+                wait();
+                assert.deepEqual(get_persistent_storage(request_sessionid), null);
+            });
+            it('sessionID', () => {
+                let res = new http.Client().get(url.host + '/get', {
+                    sessionID: save_id
+                });
+                var name = get_value(res, 'username');
+                assert.equal(name, "hoo");
+            });
+            it('illegal sessionID, response 500', () => {
+                let res = new http.Client().get(url.host + '/get', {
+                    sessionID: 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6Ij.bN9IiVDgy2qfQgndBv5SfyLSEotTw1RjK3hgjR-VJpM'
+                });
+                assert.equal(res.status, 500);
+                assert.equal(res.data.toString(), 'JSON Web Token is error.');
+            });
+            it('request with sessionID', () => {
+                let client = new http.Client();
+                let res = client.get(url.host + '/user?id=8&username=lion');
+                save_id = res.cookies[0].value;
+                assert.equal(save_id, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjgiLCJ1c2VybmFtZSI6Imxpb24ifQ.bN9IiVDgy2qfQgndBv5SfyLSEotTw1RjK3hgjR-VJpM');
+                assert.equal(request_sessionid, save_id);
+                assert.equal(request_session.username, 'lion');
+                res = client.get(url.host + '/get', {
+                    sessionID: save_id
+                });
+                assert.equal(request_sessionid, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjgiLCJ1c2VybmFtZSI6Imxpb24ifQ.bN9IiVDgy2qfQgndBv5SfyLSEotTw1RjK3hgjR-VJpM');
+                assert.equal(request_session.username, 'lion');
+                assert.equal(JSON.parse(res.data.toString()).username, 'lion');
+                assert.deepEqual(session.get(request_sessionid), null);
+                assert.deepEqual(get_persistent_storage(request_sessionid), null);
+                wait();
+                assert.deepEqual(get_persistent_storage(request_sessionid), null);
+            });
+            it('delete session property, response 500', () => {
+                let client = new http.Client();
+                client.get(url.host + '/user?id=8&username=lion', {
+                    sessionID: save_id
+                });
+                assert.equal(request_sessionid, save_id);
+                assert.deepEqual(request_session, {
+                    id: "8",
+                    username: 'lion'
+                });
+                assert.deepEqual(session.get(request_sessionid), null);
+                let res = client.get(url.host + '/del', {
+                    sessionID: save_id
+                });
+                assert.equal(res.status, 500);
+                assert.equal(res.data.toString(), "Can't modify the JSON Web Token.");
+            });
+            it('adjacent requests', () => {
+                let client = new http.Client();
+                let res = client.get(url.host + '/user?username=lion1');
+                assert.equal(request_session.username, 'lion1');
+                res = client.get(url.host + '/user?username=lion2');
+                assert.equal(request_session.username, 'lion2');
+                res = client.get(url.host + '/user?username=lion3');
+                assert.equal(request_session.username, 'lion3');
+                res = client.get(url.host + '/user?username=lion4');
+                assert.equal(request_session.username, 'lion4');
+                var sid = res.cookies[0].value;
+                assert.deepEqual(session.get(request_sessionid), null);
+                assert.deepEqual(get_persistent_storage(sid), null);
+                wait();
+                assert.deepEqual(get_persistent_storage(sid), null);
+            });
+            it('get() resets TTL', () => {
+                return;
+                // sid
+                // req-a
+                // req-b get //
+                // req-a set @ expire+
+                // req-b get // not updated
+                // req-a
+                // req-b get //
+                // req-a get // renew object TTL
+                // req-a set @ expire+
+                // req-b get // not updated
+                let client = new http.Client();
+                let sid = get_value(client.get(url.host + 'session'));
+                let res_a;
+                setTimeout(() => {
+                    res_a = client.get(url.host + '/kv?k=username&v=lion', {
+                        sessionID: sid
+                    });
+                }, 0);
+                wait(delay * 3);
+                let res_b = client.get(url.host + '/kv?k=password&v=9465', {
+                    sessionID: sid
+                });
+                wait(delay * 2);
+                assert.deepEqual(request_session, {
+                    password: '9465'
+                });
+                setTimeout(() => {
+                    res_a = client.get(url.host + '/kv?k=username&v=lion', {
+                        sessionID: sid
+                    });
+                }, 0);
+                wait(delay * 2);
+                res_b = client.get(url.host + '/kv?k=password&v=9465', {
+                    sessionID: sid
+                });
+                assert.deepEqual(request_session, {
+                    username: 'lion',
+                    password: '9465'
+                });
+                wait(delay * 4)
+            });
+        });
     });
 
 }
