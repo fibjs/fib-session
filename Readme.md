@@ -94,3 +94,31 @@ returns a header-based session filter.
 
 ### session.api_token
 returns an api handler that gets a new session ID.
+---
+JSON Web Token(JWT) options
+| options                   | default |                                                                                                  |
+|---------------------------|---------|--------------------------------------------------------------------------------------------------|
+| session_jwt_algo          |   null  | see jws.ALGORITHMS in https://github.com/fibjs/fib-jws                                           |
+| session_jwt_key           |   null  | sign key. see https://www.npmjs.com/package/fib-jws#jwssignheader-payload-key                    |
+- set session_jwt_algo and session_jwt_key to enable JWT
+```javascript
+// session_jwt_algo 是算法
+// session_jwt_key 是验证签名用的key. HS256算法的verify_key和sign_key是一样的(对称算法)，但其他算法就不一定。
+var session = new Session(conn, { session_jwt_algo: 'HS256',  session_jwt_key: verify_key })
+```
+## Methods
+### session.setTokenCookie 
+- 下发令牌(Token)
+- key 用于签名的key
+- JWT的目的是为了分布式，所以同一个session里只能设置一次setSessionToken
+  对应的r.session (默认值r.session={} ) 只能设置一次，多次设置则抛出异常
+  new Error('Can't modify the JSON Web Token')。
+```javascript
+// 将{ id: 12345, name: "Frank" }签名之后设置cookie
+session.setTokenCookie({ id: 12345, name: "Frank" }, sign_key)
+```
+### session.getToken 
+- API模式获取token
+```javascript
+session.getToken ({ id: 12345, name: "Frank" }, sign_key)
+```
