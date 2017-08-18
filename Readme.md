@@ -94,8 +94,11 @@ returns a header-based session filter.
 
 ### session.api_token
 returns an api handler that gets a new session ID.
+
+
+JSON Web Token(JWT) 
 ---
-JSON Web Token(JWT) options
+options
 
 | options                   | default |                                           |
 |---------------------------|---------|-------------------------------------------|
