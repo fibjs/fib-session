@@ -120,7 +120,8 @@ var session = new Session(conn, { session_jwt_algo: 'HS256',  session_jwt_key: v
 - default value r.session={}
 ```javascript
 // sign user info: { id: 12345, name: "Frank" }, and set the cookie
-session.setTokenCookie({ id: 12345, name: "Frank" }, sign_key)
+// r is request
+session.setTokenCookie(r, { id: 12345, name: "Frank" }, sign_key)
 ```
 ### session.getToken 
 - get token for api filter mode, see session.api_filter
