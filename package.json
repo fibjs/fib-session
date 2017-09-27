@@ -1,6 +1,6 @@
 {
   "name": "fib-session",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Simple session middleware for fibjs",
   "main": "lib/index.js",
   "repository": "git://github.com/fibjs/fib-session.git",
@@ -18,8 +18,8 @@
     "type": "travis"
   },
   "dependencies": {
-    "fib-kv": "^1.0.5",
-    "fib-pool": "^1.1.0",
+    "fib-kv": "^1.1.0",
+    "fib-pool": "^1.3.0",
     "fib-jws": "^0.1.0"
   }
 }
