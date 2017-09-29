@@ -352,7 +352,7 @@ function session_test(name, opts, _before, _after) {
 
                 // let res = client.get(url.host + '/user?username=lion');
 
-                // assert.equal(JSON.parse(res.data.toString()).status, 406);
+                // assert.equal(JSON.parse(res.data.toString()).statusCode, 406);
                 // assert.equal(request_session, undefined);
                 // assert.equal(res.cookies.length, 0);
 
@@ -449,7 +449,9 @@ function session_test(name, opts, _before, _after) {
                 });
 
                 new http.Client().get(url.host + '/user?username=lion', {
-                    sessionID: save_id
+                    headers: {
+                        sessionID: save_id
+                    }
                 });
 
                 assert.equal(request_sessionid.length, 32);
@@ -482,7 +484,9 @@ function session_test(name, opts, _before, _after) {
                 assert.deepEqual(get_persistent_storage(request_sessionid), {});
 
                 res = new http.Client().get(url.host + '/session', {
-                    sessionID: save_id
+                    headers: {
+                        sessionID: save_id
+                    }
                 });
                 sid = JSON.parse(res.data.toString()).sessionID;
 
@@ -508,7 +512,9 @@ function session_test(name, opts, _before, _after) {
 
             it('illegal sessionID', () => {
                 let res = new http.Client().get(url.host + '/session', {
-                    sessionID: save_id
+                    headers: {
+                        sessionID: save_id
+                    }
                 });
                 assert.equal(request_sessionid.length, 32);
                 assert.equal(request_sessionid, save_id);
@@ -518,7 +524,9 @@ function session_test(name, opts, _before, _after) {
                 let client = new http.Client();
                 let sid = get_value(client.get(url.host + '/session'));
                 let res = client.get(url.host + '/user?username=lion', {
-                    sessionID: sid
+                    headers: {
+                        sessionID: sid
+                    }
                 });
 
                 assert.equal(sid.length, 32);
@@ -526,7 +534,9 @@ function session_test(name, opts, _before, _after) {
                 assert.equal(request_session.username, 'lion');
 
                 res = client.get(url.host + '/get', {
-                    sessionID: sid
+                    headers: {
+                        sessionID: sid
+                    }
                 });
 
                 assert.equal(request_sessionid.length, 32);
@@ -553,14 +563,18 @@ function session_test(name, opts, _before, _after) {
                 assert.equal(request_session.username, undefined);
 
                 let res = client.get(url.host + '/remove', {
-                    sessionID: sid
+                    headers: {
+                        sessionID: sid
+                    }
                 });
 
                 // assert.equal(request_sessionid, undefined);
                 // assert.equal(request_session, undefined);
 
                 res = client.get(url.host + '/get', {
-                    sessionID: sid
+                    headers: {
+                        sessionID: sid
+                    }
                 });
 
                 assert.notEqual(request_sessionid, sid);
@@ -575,7 +589,9 @@ function session_test(name, opts, _before, _after) {
                 let client = new http.Client();
                 let sid = get_value(client.get(url.host + '/session'));
                 client.get(url.host + '/user?username=lion', {
-                    sessionID: sid
+                    headers: {
+                        sessionID: sid
+                    }
                 });
 
                 assert.equal(request_sessionid, sid);
@@ -587,7 +603,9 @@ function session_test(name, opts, _before, _after) {
                 });
 
                 let res = client.get(url.host + '/del', {
-                    sessionID: sid
+                    headers: {
+                        sessionID: sid
+                    }
                 });
 
                 assert.deepEqual(request_session, {});
@@ -595,7 +613,9 @@ function session_test(name, opts, _before, _after) {
                 assert.deepEqual(get_persistent_storage(sid), {});
 
                 res = client.get(url.host + '/get', {
-                    sessionID: sid
+                    headers: {
+                        sessionID: sid
+                    }
                 });
 
                 assert.equal(request_session.username, undefined);
@@ -615,17 +635,23 @@ function session_test(name, opts, _before, _after) {
                 assert.equal(request_session.username, 'lion1');
 
                 res = client.get(url.host + '/user?username=lion2', {
-                    sessionID: sid
+                    headers: {
+                        sessionID: sid
+                    }
                 });
                 assert.equal(request_session.username, 'lion2');
 
                 res = client.get(url.host + '/user?username=lion3', {
-                    sessionID: sid
+                    headers: {
+                        sessionID: sid
+                    }
                 });
                 assert.equal(request_session.username, 'lion3');
 
                 res = client.get(url.host + '/user?username=lion4', {
-                    sessionID: sid
+                    headers: {
+                        sessionID: sid
+                    }
                 });
                 assert.equal(request_session.username, 'lion4');
 
@@ -647,7 +673,9 @@ function session_test(name, opts, _before, _after) {
                 let sid_b = get_value(client_b.get(url.host + 'session'));
 
                 let res_a = client_a.get(url.host + '/user?username=lion', {
-                    sessionID: sid_a
+                    headers: {
+                        sessionID: sid_a
+                    }
                 });
 
                 assert.equal(request_sessionid.length, 32);
@@ -656,7 +684,9 @@ function session_test(name, opts, _before, _after) {
                 assert.equal(sid_a, request_sessionid);
 
                 let res_b = client_b.get(url.host + '/user?username=lion', {
-                    sessionID: sid_b
+                    headers: {
+                        sessionID: sid_b
+                    }
                 });
 
                 assert.equal(request_sessionid.length, 32);
@@ -665,7 +695,9 @@ function session_test(name, opts, _before, _after) {
                 assert.equal(sid_b, request_sessionid);
 
                 res_a = client_a.get(url.host + '/user?username=lion-a', {
-                    sessionID: sid_a
+                    headers: {
+                        sessionID: sid_a
+                    }
                 });
 
                 assert.equal(request_sessionid.length, 32);
@@ -673,7 +705,9 @@ function session_test(name, opts, _before, _after) {
                 assert.equal(res_a.data, undefined);
 
                 res_b = client_b.get(url.host + '/user?username=lion-b', {
-                    sessionID: sid_b
+                    headers: {
+                        sessionID: sid_b
+                    }
                 });
 
                 assert.equal(request_sessionid.length, 32);
@@ -681,7 +715,9 @@ function session_test(name, opts, _before, _after) {
                 assert.equal(res_b.data, undefined);
 
                 res_a = client_a.get(url.host + '/get', {
-                    sessionID: sid_a
+                    headers: {
+                        sessionID: sid_a
+                    }
                 });
 
                 assert.equal(request_sessionid.length, 32);
@@ -692,7 +728,9 @@ function session_test(name, opts, _before, _after) {
                 assert.deepEqual(session.get(res_a.firstHeader('sessionID')), null);
 
                 res_b = client_b.get(url.host + '/get', {
-                    sessionID: sid_b
+                    headers: {
+                        sessionID: sid_b
+                    }
                 });
 
                 assert.equal(request_sessionid.length, 32);
@@ -718,13 +756,17 @@ function session_test(name, opts, _before, _after) {
                 let res_a;
                 setTimeout(() => {
                     res_a = client.get(url.host + '/kv?k=username&v=lion', {
-                        sessionID: sid
+                        headers: {
+                            sessionID: sid
+                        }
                     });
                 }, 0);
 
                 wait(delay * 3);
                 let res_b = client.get(url.host + '/kv?k=password&v=9465', {
-                    sessionID: sid
+                    headers: {
+                        sessionID: sid
+                    }
                 });
 
                 wait(delay * 2);
@@ -735,13 +777,17 @@ function session_test(name, opts, _before, _after) {
 
                 setTimeout(() => {
                     res_a = client.get(url.host + '/kv?k=username&v=lion', {
-                        sessionID: sid
+                        headers: {
+                            sessionID: sid
+                        }
                     });
                 }, 0);
 
                 wait(delay * 5);
                 res_b = client.get(url.host + '/kv?k=password&v=9465', {
-                    sessionID: sid
+                    headers: {
+                        sessionID: sid
+                    }
                 });
 
                 assert.deepEqual(request_session, {
@@ -773,13 +819,17 @@ function session_test(name, opts, _before, _after) {
                 let res_a;
                 setTimeout(() => {
                     res_a = client.get(url.host + '/kv?k=username&v=lion', {
-                        sessionID: sid
+                        headers: {
+                            sessionID: sid
+                        }
                     });
                 }, 0);
 
                 wait(delay * 3);
                 let res_b = client.get(url.host + '/kv?k=password&v=9465', {
-                    sessionID: sid
+                    headers: {
+                        sessionID: sid
+                    }
                 });
 
                 wait(delay * 2);
@@ -790,13 +840,17 @@ function session_test(name, opts, _before, _after) {
 
                 setTimeout(() => {
                     res_a = client.get(url.host + '/kv?k=username&v=lion', {
-                        sessionID: sid
+                        headers: {
+                            sessionID: sid
+                        }
                     });
                 }, 0);
 
                 wait(delay * 2);
                 res_b = client.get(url.host + '/kv?k=password&v=9465', {
-                    sessionID: sid
+                    headers: {
+                        sessionID: sid
+                    }
                 });
 
                 assert.deepEqual(request_session, {
@@ -814,7 +868,7 @@ function session_test(name, opts, _before, _after) {
             let session_jwt_key = '98DE76B1'; //HS256是对称签名，所以加密和验证的key一样
             before(() => {
                 session = new Session(conn, {
-                    session_jwt_algo: 'HS256', 
+                    session_jwt_algo: 'HS256',
                     session_jwt_key: session_jwt_key
                 });
                 session.setup();
@@ -824,7 +878,7 @@ function session_test(name, opts, _before, _after) {
                 let srv = new http.Server(url.port, [
                     session.cookie_filter,
                     (r) => {
-                        if(r.address != '/login' && (!r.session || !r.session.id>0)) {
+                        if (r.address != '/login' && (!r.session || !r.session.id > 0)) {
                             // redirect
                             // r.response.redirect('/login');
                             r.response.write('redirect'); //for test
@@ -837,21 +891,24 @@ function session_test(name, opts, _before, _after) {
                             r.response.write('jwt')
                         },
                         '^/login$': (r) => {
-                            session.setTokenCookie(r, { id: 12345, name: "Frank" }, session_jwt_key);
+                            session.setTokenCookie(r, {
+                                id: 12345,
+                                name: "Frank"
+                            }, session_jwt_key);
                             jwt_req_session = r.session;
                             r.response.write('login')
                         },
                         '^/jwt_update$': (r) => {
                             try {
                                 r.session.color = 'red';
-                            }catch(e) {
+                            } catch (e) {
                                 r.response.write(e.message);
                             }
                         },
                         '^/jwt_delete$': (r) => {
                             try {
                                 delete r.session.color;
-                            }catch(e) {
+                            } catch (e) {
                                 r.response.write(e.message);
                             }
                         }
@@ -868,8 +925,8 @@ function session_test(name, opts, _before, _after) {
                 var txt = res.data.toString();
                 assert.equal(txt, 'login');
                 var b = true;
-                for(var i=0; res.cookies && i<res.cookies.length; i++) {
-                    if(res.cookies[i] && res.cookies[i].name == 'sessionID') {
+                for (var i = 0; res.cookies && i < res.cookies.length; i++) {
+                    if (res.cookies[i] && res.cookies[i].name == 'sessionID') {
                         assert.equal(res.cookies[i].value, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MTIzNDUsIm5hbWUiOiJGcmFuayJ9.adE0u7POp1NG1GHQjZUGb9lfovw9-GdEVusqh2Sc0-M');
                         b = false;
                     }
@@ -891,21 +948,27 @@ function session_test(name, opts, _before, _after) {
                 res = client.get(url.host + '/jwt_delete');
                 var txt = res.data.toString();
                 assert.equal(txt, "Can't modify the JSON Web Token.");
-                var jwt_token = session.getToken({abc:'xyz'}, 'test');
+                var jwt_token = session.getToken({
+                    abc: 'xyz'
+                }, 'test');
                 assert.equal(jwt_token, 'eyJhbGciOiJIUzI1NiJ9.eyJhYmMiOiJ4eXoifQ.ltcUVSz3Np3ZSLpk7TwtTFFjlNY8X2nikCGcuF2ZMgE')
             });
         });
         describe('api in JWT', function () {
             var session_jwt_key = '98DE76B1-9';
             var jwt_sign = 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MTIzNDUsIm5hbWUiOiJGcmFuayJ9.adE0u7POp1NG1GHQjZUGb9lfovw9-GdEVusqh2Sc0-M';
-            var jwt_session_data = {"id": 12345, "name": "Frank"};
+            var jwt_session_data = {
+                "id": 12345,
+                "name": "Frank"
+            };
             before(() => {
                 session = new Session(conn, {
-                    session_jwt_algo: 'HS256', 
+                    session_jwt_algo: 'HS256',
                     session_jwt_key: session_jwt_key
-                });-9
+                }); - 9
                 session.setup();
             });
+
             function get_value(res, key = 'sessionID') {
                 return JSON.parse(res.data.toString())[key];
             }
@@ -915,8 +978,8 @@ function session_test(name, opts, _before, _after) {
                     (r) => {
                         try {
                             session.api_filter(r);
-                        }catch(e) {
-                            r.response.status = 500;
+                        } catch (e) {
+                            r.response.statusCode = 500;
                             r.response.write(e.message);
                             r.end();
                         }
@@ -926,7 +989,10 @@ function session_test(name, opts, _before, _after) {
                             r.response.write('session-ok');
                         },
                         '^/user$': (r) => {
-                            session.setTokenCookie && session.setTokenCookie(r, {id: r.query.id||"1", username: r.query.username}, session_jwt_key);
+                            session.setTokenCookie && session.setTokenCookie(r, {
+                                id: r.query.id || "1",
+                                username: r.query.username
+                            }, session_jwt_key);
                         },
                         '^/get$': (r) => r.response.write(JSON.stringify({
                             username: r.session.username
@@ -934,8 +1000,8 @@ function session_test(name, opts, _before, _after) {
                         '^/del$': (r) => {
                             try {
                                 delete r.session.username
-                            }catch(e) {
-                                r.response.status = 500;
+                            } catch (e) {
+                                r.response.statusCode = 500;
                                 r.response.write(e.message);
                                 r.end();
                             }
@@ -984,16 +1050,20 @@ function session_test(name, opts, _before, _after) {
             });
             it('sessionID', () => {
                 let res = new http.Client().get(url.host + '/get', {
-                    sessionID: save_id
+                    headers: {
+                        sessionID: save_id
+                    }
                 });
                 var name = get_value(res, 'username');
                 assert.equal(name, "hoo");
             });
             it('illegal sessionID, response 500', () => {
                 let res = new http.Client().get(url.host + '/get', {
-                    sessionID: 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6Ij.bN9IiVDgy2qfQgndBv5SfyLSEotTw1RjK3hgjR-VJpM'
+                    headers: {
+                        sessionID: 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6Ij.bN9IiVDgy2qfQgndBv5SfyLSEotTw1RjK3hgjR-VJpM'
+                    }
                 });
-                assert.equal(res.status, 500);
+                assert.equal(res.statusCode, 500);
                 assert.equal(res.data.toString(), 'JSON Web Token is error.');
             });
             it('request with sessionID', () => {
@@ -1004,7 +1074,9 @@ function session_test(name, opts, _before, _after) {
                 assert.equal(request_sessionid, save_id);
                 assert.equal(request_session.username, 'lion');
                 res = client.get(url.host + '/get', {
-                    sessionID: save_id
+                    headers: {
+                        sessionID: save_id
+                    }
                 });
                 assert.equal(request_sessionid, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjgiLCJ1c2VybmFtZSI6Imxpb24ifQ.bN9IiVDgy2qfQgndBv5SfyLSEotTw1RjK3hgjR-VJpM');
                 assert.equal(request_session.username, 'lion');
@@ -1017,7 +1089,9 @@ function session_test(name, opts, _before, _after) {
             it('delete session property, response 500', () => {
                 let client = new http.Client();
                 client.get(url.host + '/user?id=8&username=lion', {
-                    sessionID: save_id
+                    headers: {
+                        sessionID: save_id
+                    }
                 });
                 assert.equal(request_sessionid, save_id);
                 assert.deepEqual(request_session, {
@@ -1026,9 +1100,11 @@ function session_test(name, opts, _before, _after) {
                 });
                 assert.deepEqual(session.get(request_sessionid), null);
                 let res = client.get(url.host + '/del', {
-                    sessionID: save_id
+                    headers: {
+                        sessionID: save_id
+                    }
                 });
-                assert.equal(res.status, 500);
+                assert.equal(res.statusCode, 500);
                 assert.equal(res.data.toString(), "Can't modify the JSON Web Token.");
             });
             it('adjacent requests', () => {
@@ -1064,12 +1140,16 @@ function session_test(name, opts, _before, _after) {
                 let res_a;
                 setTimeout(() => {
                     res_a = client.get(url.host + '/kv?k=username&v=lion', {
-                        sessionID: sid
+                        headers: {
+                            sessionID: sid
+                        }
                     });
                 }, 0);
                 wait(delay * 3);
                 let res_b = client.get(url.host + '/kv?k=password&v=9465', {
-                    sessionID: sid
+                    headers: {
+                        sessionID: sid
+                    }
                 });
                 wait(delay * 2);
                 assert.deepEqual(request_session, {
@@ -1077,12 +1157,16 @@ function session_test(name, opts, _before, _after) {
                 });
                 setTimeout(() => {
                     res_a = client.get(url.host + '/kv?k=username&v=lion', {
-                        sessionID: sid
+                        headers: {
+                            sessionID: sid
+                        }
                     });
                 }, 0);
                 wait(delay * 2);
                 res_b = client.get(url.host + '/kv?k=password&v=9465', {
-                    sessionID: sid
+                    headers: {
+                        sessionID: sid
+                    }
                 });
                 assert.deepEqual(request_session, {
                     username: 'lion',
