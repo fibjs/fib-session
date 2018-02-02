@@ -141,7 +141,7 @@ function session_test(name, opts, _before, _after) {
 
                 assert.equal(request_session.username, undefined);
                 assert.equal(request_sessionid.length, 32);
-                assert.equal(session.get(request_sessionid), null);
+                assert.deepEqual(session.get(request_sessionid), {});
                 let cookie = res.cookies[0];
                 assert.equal(cookie.value.length, 32);
                 assert.equal(request_session.username, null);
@@ -171,7 +171,7 @@ function session_test(name, opts, _before, _after) {
                 });
 
                 res = client.get(url.host + '/del');
-
+                
                 assert.equal(request_session.username, undefined);
                 assert.equal(request_sessionid.length, 32);
                 assert.equal(res.cookies.length, 0);
@@ -182,15 +182,15 @@ function session_test(name, opts, _before, _after) {
                 });
                 wait();
                 assert.deepEqual(get_persistent_storage(request_sessionid), {});
-
+                
                 res = client.get(url.host + '/get');
-
+                
                 assert.equal(request_session.username, undefined);
                 assert.equal(request_sessionid.length, 32);
 
                 assert.deepEqual(session.get(request_sessionid), {});
 
-                assert.equal(res.cookies.length, 0);
+                assert.equal(res.cookies.length, 1);
                 assert.equal(request_session.username, null);
 
                 assert.deepEqual(session.get(request_sessionid), {});
@@ -303,19 +303,19 @@ function session_test(name, opts, _before, _after) {
                 // assert.equal(request_sessionid, undefined);
                 // assert.equal(request_session, undefined);
 
-                assert.deepEqual(session.get(local_sid), null);
+                assert.deepEqual(session.get(local_sid), {});
 
                 let get_res = client.get(url.host + '/get');
                 assert.equal(get_res.data, null);
 
                 assert.equal(request_session.username, undefined);
                 assert.equal(request_sessionid.length, 32);
-                assert.equal(session.get(local_sid), null);
+                assert.deepEqual(session.get(local_sid), {});
                 let cookie = get_res.cookies[0];
                 assert.equal(cookie.value.length, 32);
                 assert.equal(request_session.username, null);
 
-                assert.deepEqual(session.get(local_sid), null);
+                assert.deepEqual(session.get(local_sid), {});
                 assert.deepEqual(get_persistent_storage(request_sessionid), null);
                 wait();
                 assert.deepEqual(get_persistent_storage(request_sessionid), null);
@@ -571,15 +571,11 @@ function session_test(name, opts, _before, _after) {
                 // assert.equal(request_sessionid, undefined);
                 // assert.equal(request_session, undefined);
 
-                res = client.get(url.host + '/get', {
-                    headers: {
-                        sessionID: sid
-                    }
-                });
+                res = client.get(url.host + '/get');
 
                 assert.notEqual(request_sessionid, sid);
                 assert.deepEqual(request_session, {});
-                assert.deepEqual(session.get(request_sessionid), null);
+                assert.deepEqual(session.get(request_sessionid), {});
                 assert.deepEqual(get_persistent_storage(sid), null);
                 wait();
                 assert.deepEqual(get_persistent_storage(sid), null);
@@ -630,7 +626,9 @@ function session_test(name, opts, _before, _after) {
                 let client = new http.Client();
                 let sid = get_value(client.get(url.host + '/session'));
                 let res = client.get(url.host + '/user?username=lion1', {
-                    sessionID: sid
+                    headers: {
+                        sessionID: sid
+                    }
                 });
                 assert.equal(request_session.username, 'lion1');
 
@@ -725,7 +723,7 @@ function session_test(name, opts, _before, _after) {
                 assert.deepEqual(JSON.parse(res_a.data.toString()), {
                     username: 'lion-a'
                 });
-                assert.deepEqual(session.get(res_a.firstHeader('sessionID')), null);
+                assert.deepEqual(session.get(res_a.firstHeader('sessionID')), {});
 
                 res_b = client_b.get(url.host + '/get', {
                     headers: {
@@ -738,7 +736,7 @@ function session_test(name, opts, _before, _after) {
                 assert.deepEqual(JSON.parse(res_b.data.toString()), {
                     username: 'lion-b'
                 });
-                assert.deepEqual(session.get(res_b.firstHeader('sessionID')), null);
+                assert.deepEqual(session.get(res_b.firstHeader('sessionID')), {});
 
                 wait();
                 assert.deepEqual(get_persistent_storage(sid_a), {
@@ -1035,7 +1033,9 @@ function session_test(name, opts, _before, _after) {
                 });
                 //other user "lion" login
                 res = new http.Client().get(url.host + '/user?id=8&username=lion', {
-                    sessionID: save_id
+                    headers: {
+                        sessionID: save_id
+                    }
                 });
                 //console.error('save_id2:', res.cookies[0].value);
                 assert.equal(request_sessionid, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjgiLCJ1c2VybmFtZSI6Imxpb24ifQ.bN9IiVDgy2qfQgndBv5SfyLSEotTw1RjK3hgjR-VJpM');
@@ -1044,7 +1044,7 @@ function session_test(name, opts, _before, _after) {
                     "username": "lion"
                 });
                 //jwt does not need to save to store
-                assert.deepEqual(session.get(request_sessionid), null);
+                assert.deepEqual(session.get(request_sessionid), {});
                 wait();
                 assert.deepEqual(get_persistent_storage(request_sessionid), null);
             });
@@ -1081,7 +1081,7 @@ function session_test(name, opts, _before, _after) {
                 assert.equal(request_sessionid, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjgiLCJ1c2VybmFtZSI6Imxpb24ifQ.bN9IiVDgy2qfQgndBv5SfyLSEotTw1RjK3hgjR-VJpM');
                 assert.equal(request_session.username, 'lion');
                 assert.equal(JSON.parse(res.data.toString()).username, 'lion');
-                assert.deepEqual(session.get(request_sessionid), null);
+                assert.deepEqual(session.get(request_sessionid), {});
                 assert.deepEqual(get_persistent_storage(request_sessionid), null);
                 wait();
                 assert.deepEqual(get_persistent_storage(request_sessionid), null);
@@ -1098,7 +1098,7 @@ function session_test(name, opts, _before, _after) {
                     id: "8",
                     username: 'lion'
                 });
-                assert.deepEqual(session.get(request_sessionid), null);
+                assert.deepEqual(session.get(request_sessionid), {});
                 let res = client.get(url.host + '/del', {
                     headers: {
                         sessionID: save_id
@@ -1118,7 +1118,7 @@ function session_test(name, opts, _before, _after) {
                 res = client.get(url.host + '/user?username=lion4');
                 assert.equal(request_session.username, 'lion4');
                 var sid = res.cookies[0].value;
-                assert.deepEqual(session.get(request_sessionid), null);
+                assert.deepEqual(session.get(request_sessionid), {});
                 assert.deepEqual(get_persistent_storage(sid), null);
                 wait();
                 assert.deepEqual(get_persistent_storage(sid), null);
