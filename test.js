@@ -63,10 +63,17 @@ function session_test(name, opts, _before, _after) {
                         '^/get$': (r) => r.response.write(r.session.username),
                         '^/del$': (r) => delete r.session.username,
                         '^/remove$': (r) => session.remove(r.sessionid),
+                        '^/set$': (r) => {
+                            try {
+                                r.session.sessionid = r.sessionid;
+                            } catch (e) {
+                                r.response.write(e.message);
+                            }
+                        },
                     },
                     r => {
                         request_session = r.session;
-                        request_sessionid = r.sessionid;
+                        request_sessionid = r.session.sessionid;
                     }
                 ]);
                 srv.asyncRun();
@@ -150,6 +157,22 @@ function session_test(name, opts, _before, _after) {
                 wait();
                 assert.deepEqual(get_persistent_storage(request_sessionid), null);
             });
+
+            it('set sessionID', () => {
+                let client = new http.Client();
+
+                // saves sessionID in client cookies
+                let res = client.get(url.host + '/user?username=lion');
+
+                assert.equal(request_sessionid.length, 32);
+                assert.equal(request_session.username, 'lion');
+
+                res = client.get(url.host + '/set');
+
+                var txt = res.data.toString();
+                assert.equal(txt, "Can't set sessionid.");
+            });
+
 
             it('delete session property', () => {
                 let client = new http.Client();
