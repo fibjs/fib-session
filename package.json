@@ -1,6 +1,6 @@
 {
   "name": "fib-session",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Simple session middleware for fibjs",
   "main": "lib/index.js",
   "repository": "git://github.com/fibjs/fib-session.git",
