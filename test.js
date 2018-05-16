@@ -79,6 +79,18 @@ function session_test(name, opts, _before, _after) {
                 srv.asyncRun();
             });
 
+            it("expire check",() => {
+                let httpClient = new http.Client();
+                let res = httpClient.get(url.host + '/unKnownUrl');
+                let expires = httpClient.cookies[0].expires;    
+
+                if(opts.expires){
+                    assert.notEqual(new Date(expires).toString(), "Invalid Date")
+                }else{
+                    assert.equal(new Date(expires).toString(), "Invalid Date");
+                }
+            });
+
             it('without sessionID', () => {
                 let res = new http.Client().get(url.host + '/user?username=lion');
 
@@ -1207,6 +1219,7 @@ session_test(
         table_name: 'session',
         domain: url.domain,
         session_cache_timeout: delay * 2,
+        expires: 7 * 24 * 60 * 60 * 1000
     },
     () => conn = db.openSQLite('test.db'),
     () => {
