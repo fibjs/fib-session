@@ -1253,7 +1253,8 @@ session_test(
         } catch (e) {}
     });
 
-session_test(
+const isTestMysql = !!process.env.FIB_SESSION_TEST_MYSQL
+isTestMysql && session_test(
     'MySQL', {
         table_name: 'session',
         domain: url.domain,
@@ -1267,7 +1268,7 @@ session_test(
         conn.close();
     });
 
-session_test(
+isTestMysql && session_test(
     'MySQL pool', {
         table_name: 'session',
         domain: url.domain,
