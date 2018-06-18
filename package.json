@@ -12,14 +12,26 @@
     "fibjs"
   ],
   "scripts": {
+    "build": "fib-typify src -o lib -c .typify-ts.json",
     "ci": "fibjs test.js"
   },
   "ci": {
-    "type": "travis"
+    "type": "travis",
+    "version": [
+      "0.21.0",
+      "0.22.0",
+      "0.23.0",
+      "0.24.0",
+      "0.25.0"
+    ]
   },
   "dependencies": {
     "fib-kv": "^1.1.0",
     "fib-pool": "^1.3.0",
     "fib-jws": "^0.1.0"
+  },
+  "devDependencies": {
+    "@fibjs/ci": "^2.0.0",
+    "@types/fibjs": "github:fibjs/fib-types#v1.0.7"
   }
 }
