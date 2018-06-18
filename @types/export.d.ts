@@ -7,7 +7,7 @@ export interface FibSessionHttpRequest extends http.Request {
     session: FibSessionObjectProxy
 }
 
-export declare class FibSession {
+export declare class FibSessionClass {
     constructor (conn: any, opts?: FibSessionOptions);
 
     store: FibSessionStore;
@@ -20,3 +20,5 @@ export declare class FibSession {
 
     api_token: (r: FibSessionHttpRequest) => void;
 }
+
+export as namespace FibSessionNS;
