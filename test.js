@@ -3,8 +3,9 @@ test.setup();
 
 let Session = require('./');
 
-let db = require('db');
 let fs = require('fs');
+let path = require('path');
+let db = require('db');
 let http = require('http');
 let kv = require('fib-kv');
 let pool = require('fib-pool');
@@ -25,11 +26,18 @@ let url = {
         return this.protocol + '://' + this.domain + ':' + this.port
     },
 };
-let conf = {
-    user: 'username',
-    password: 'password',
-    database: 'test',
-};
+let user_conf = {}
+let user_conf_file = path.resolve(__dirname, './test-config.json')
+if (fs.exists(user_conf_file)) {
+    try {
+        user_conf = require(user_conf_file)
+    } catch (e) {}
+}
+let conf = util.extend({}, {
+    "user": "username",
+    "password": "password",
+    "database": "test",
+}, user_conf);
 
 let conn;
 let session;
@@ -1245,7 +1253,8 @@ session_test(
         } catch (e) {}
     });
 
-session_test(
+const isTestMysql = !!process.env.FIB_SESSION_TEST_MYSQL
+isTestMysql && session_test(
     'MySQL', {
         table_name: 'session',
         domain: url.domain,
@@ -1259,7 +1268,7 @@ session_test(
         conn.close();
     });
 
-session_test(
+isTestMysql && session_test(
     'MySQL pool', {
         table_name: 'session',
         domain: url.domain,
