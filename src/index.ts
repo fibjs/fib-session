@@ -4,12 +4,12 @@ import util = require("util");
 import utils = require('./utils');
 import get_store = require('./store');
 import proxy = require('./proxy');
-import { FibSessionHttpRequest, FibSessionGenerator, FibSessionOptions, FibSessionCookieJsonPayload, FibSessionIdValueType, FibSessionIdNameType, FibSessionStore } from '../@types';
 
 import jwt = require('./jwt');
+import { FibSessionHttpRequest } from '../@types/export';
 
-const session: FibSessionGenerator = function (conn: any, opts: FibSessionOptions = {}): void {
-    const kv_db: FibKv = new FibKv(conn, opts);
+const Session = function (conn: any, opts: FibSessionOptions = {}): void {
+    const kv_db = new FibKv(conn, opts);
     let store: FibSessionStore = get_store(kv_db, opts);
 
     // for test
@@ -80,4 +80,4 @@ const session: FibSessionGenerator = function (conn: any, opts: FibSessionOption
     }
 }
 
-export = session;
+export = Session;

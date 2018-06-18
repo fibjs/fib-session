@@ -1,5 +1,3 @@
-import { FibSessionObjectProxyGenerator, FibSessionStore, FibSessionProxyTmp, FibSessionObjectProxy } from '../@types';
-
 import util = require('util');
 
 const proxy: FibSessionObjectProxyGenerator = (store: FibSessionStore|null, o: object, sessionid: string, tmp: FibSessionProxyTmp, jwt: boolean = false): FibSessionObjectProxy => {

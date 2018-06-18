@@ -1,4 +1,4 @@
-import { FibSessionHttpRequest, FibSessionObjectProxyGenerator, FibSessionObject } from '../@types';
+import { FibSessionHttpRequest } from '../@types/export';
 const jws = require('fib-jws');
 
 export function getToken (jwt_algo: string) {

@@ -1,5 +1,3 @@
-import { FibSessionStoreOptions } from "../@types";
-
 export const cache_size = (opts: FibSessionStoreOptions) => opts.session_cache_size !== undefined ? opts.session_cache_size : 65536;
 
 export const cache_timeout = (opts: FibSessionStoreOptions) => opts.session_cache_timeout !== undefined ? opts.session_cache_timeout : 900000;

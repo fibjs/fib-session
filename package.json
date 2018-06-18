@@ -1,8 +1,9 @@
 {
   "name": "fib-session",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Simple session middleware for fibjs",
   "main": "lib/index.js",
+  "types": "@types/index.d.ts",
   "repository": "git://github.com/fibjs/fib-session.git",
   "author": "Liu Hu <lion@9465.net>",
   "homepage": "https://github.com/fibjs/fib-session",
@@ -13,7 +14,7 @@
   ],
   "scripts": {
     "build": "fib-typify src -o lib -c .typify-ts.json",
-    "ci": "fibjs test.js"
+    "ci": "fibjs test"
   },
   "ci": {
     "type": "travis",
@@ -26,9 +27,9 @@
     ]
   },
   "dependencies": {
+    "fib-jws": "^0.1.0",
     "fib-kv": "^1.1.0",
-    "fib-pool": "^1.3.0",
-    "fib-jws": "^0.1.0"
+    "fib-pool": "^1.4.1"
   },
   "devDependencies": {
     "@fibjs/ci": "^2.0.0",

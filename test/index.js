@@ -1,7 +1,7 @@
 let test = require('test');
 test.setup();
 
-let Session = require('./');
+let Session = require('../');
 
 let fs = require('fs');
 let path = require('path');
@@ -27,7 +27,7 @@ let url = {
     },
 };
 let user_conf = {}
-let user_conf_file = path.resolve(__dirname, './test-config.json')
+let user_conf_file = path.resolve(__dirname, '../test-config.json')
 if (fs.exists(user_conf_file)) {
     try {
         user_conf = require(user_conf_file)
