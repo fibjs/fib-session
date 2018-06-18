@@ -3,6 +3,7 @@
   "version": "0.3.0",
   "description": "Simple session middleware for fibjs",
   "main": "lib/index.js",
+  "types": "@types/index.d.ts",
   "repository": "git://github.com/fibjs/fib-session.git",
   "author": "Liu Hu <lion@9465.net>",
   "homepage": "https://github.com/fibjs/fib-session",
