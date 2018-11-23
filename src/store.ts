@@ -1,17 +1,17 @@
 import util = require('util');
 import * as utils from './utils';
 
-export = (kv_db: FibSessionKVSource, opts: FibSessionStoreOptions = {}): FibSessionStore => {
+export = (kv_db: FibSessionNS.KVSource, opts: FibSessionNS.StoreOptions = {}): FibSessionNS.Store => {
     const timers = {};
     const cache = new util.LruCache(utils.cache_size(opts), utils.cache_timeout(opts));
 
-    const fetch = (sid: FibSessionIdNameType) => {
+    const fetch = (sid: FibSessionNS.IdNameType) => {
         const v = cache.get(sid, sid => JSON.parse(kv_db.get(sid) || "{}"));
         cache.set(sid, v);
         return v;
     };
 
-    const update = (sid: FibSessionIdNameType, obj: FibSessionObject) => {
+    const update = (sid: FibSessionNS.IdNameType, obj: FibSessionNS.Object) => {
         cache.set(sid, obj);
         if (timers[sid] !== undefined)
             return sid;
@@ -24,7 +24,7 @@ export = (kv_db: FibSessionKVSource, opts: FibSessionStoreOptions = {}): FibSess
         return sid;
     };
 
-    const remove = (sid: FibSessionIdNameType) => {
+    const remove = (sid: FibSessionNS.IdNameType) => {
         if (!sid) return false;
 
         if (timers[sid] !== undefined) {

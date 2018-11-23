@@ -1,8 +1,7 @@
-import { FibSessionHttpRequest } from '../@types/export';
 const jws = require('fib-jws');
 
 export function getToken (jwt_algo: string) {
-  return (obj: FibSessionObject, key: string) => {
+  return (obj: FibSessionNS.Object, key: string) => {
     /**
      * jws.sign
      * header={ alg: 'HS256' } 
@@ -14,7 +13,7 @@ export function getToken (jwt_algo: string) {
 }
 
 export function setTokenCookie (jwt_algo: string, cookie_name: string) {
-  return (r: FibSessionHttpRequest, obj: FibSessionObject, key: string) => {
+  return (r: FibSessionNS.HttpRequest, obj: FibSessionNS.Object, key: string) => {
     r.session = obj;
     r.sessionid = jws.sign({alg: jwt_algo}, obj, key);
 
@@ -40,7 +39,7 @@ export function getPayload (text: string, key: string, algo: string) {
   }
 }
 
-export function filter (r: FibSessionHttpRequest, jwt_algo: string, jwt_key: string, cookie_name: string, proxy: FibSessionObjectProxyGenerator) {
+export function filter (r: FibSessionNS.HttpRequest, jwt_algo: string, jwt_key: string, cookie_name: string, proxy: FibSessionNS.ObjectProxyGenerator) {
   let obj;
   if (r.sessionid) {
     obj = getPayload(r.sessionid, jwt_key, jwt_algo);

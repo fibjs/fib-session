@@ -3,6 +3,8 @@
 [![Build Status](https://travis-ci.org/fibjs/fib-session.svg)](https://travis-ci.org/fibjs/fib-session)
 [![NPM version](https://img.shields.io/npm/v/fib-session.svg)](https://www.npmjs.org/package/fib-session)
 
+That's one fork version of [fib-session](https://github.com/fibjs/fib-session).
+
 Session middleware for fibjs
 
 ## Install

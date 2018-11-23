@@ -1,5 +1,6 @@
+/// <reference types="fibjs" />
 /// <reference path="basic.d.ts" />
 
-import { FibSessionClass } from './export';
-
-export = FibSessionClass
+declare module "fib-session" {
+    export = FibSessionNS.FibSessionClass
+}

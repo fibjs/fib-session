@@ -1,4 +1,5 @@
-import FibKv = require('fib-kv');
+const FibKv = require('fib-kv');
+
 import uuid = require('uuid');
 import util = require("util");
 import utils = require('./utils');
@@ -6,20 +7,19 @@ import get_store = require('./store');
 import proxy = require('./proxy');
 
 import jwt = require('./jwt');
-import { FibSessionHttpRequest } from '../@types/export';
 
-const Session = function (conn: any, opts: FibSessionOptions = {}): void {
+const Session = function (conn: any, opts: FibSessionNS.Options = {}): void {
     const kv_db = new FibKv(conn, opts);
-    let store: FibSessionStore = get_store(kv_db, opts);
+    let store: FibSessionNS.Store = get_store(kv_db, opts);
 
     // for test
     this.store = store;
 
     this.setup = () => kv_db.setup();
 
-    this.get = (sid: FibSessionIdNameType) => store.get(sid);
+    this.get = (sid: FibSessionNS.IdNameType) => store.get(sid);
 
-    this.remove = (sid: FibSessionIdNameType) => store.remove(sid);
+    this.remove = (sid: FibSessionNS.IdNameType) => store.remove(sid);
 
     // JWT(JSON Web Token)
     let jwt_algo = utils.jwt_algo(opts);
@@ -29,8 +29,8 @@ const Session = function (conn: any, opts: FibSessionOptions = {}): void {
         this.setTokenCookie = jwt.setTokenCookie(jwt_algo, utils.sid(opts));
     }
 
-    this.cookie_filter = (r: FibSessionHttpRequest) => {
-        let sessionid: FibSessionIdValueType = r.cookies[utils.sid(opts)];
+    this.cookie_filter = (r: FibSessionNS.HttpRequest) => {
+        let sessionid: FibSessionNS.IdValueType = r.cookies[utils.sid(opts)];
         r.sessionid = sessionid;
 
         if (jwt_algo && jwt_key) { //JWT
@@ -39,7 +39,7 @@ const Session = function (conn: any, opts: FibSessionOptions = {}): void {
             let obj = {};
             if (!sessionid || util.isEmpty(obj = store.get(sessionid))) {
                 r.sessionid = sessionid = uuid.random().hex();
-                const cookies: FibSessionCookieJsonPayload = {
+                const cookies: FibSessionNS.CookieJsonPayload = {
                     name: utils.sid(opts),
                     value: sessionid
                 };
@@ -53,8 +53,8 @@ const Session = function (conn: any, opts: FibSessionOptions = {}): void {
         }
     };
 
-    this.api_filter = (r: FibSessionHttpRequest) => {
-        let sessionid: FibSessionIdValueType = r.firstHeader(utils.sid(opts));
+    this.api_filter = (r: FibSessionNS.HttpRequest) => {
+        let sessionid: FibSessionNS.IdValueType = r.firstHeader(utils.sid(opts));
         r.sessionid = sessionid || undefined;
 
         if (jwt_algo && jwt_key) {
@@ -69,7 +69,7 @@ const Session = function (conn: any, opts: FibSessionOptions = {}): void {
         }
     };
 
-    this.api_token = (r: FibSessionHttpRequest) => {
+    this.api_token = (r: FibSessionNS.HttpRequest) => {
         let obj = {};
         obj[utils.sid(opts)] = r.sessionid;
 
