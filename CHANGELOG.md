@@ -1,7 +1,14 @@
 
-v0.3.2 / 2018-06-19
+v0.4.0 / 2018-11-23
 ==================
 
+  * normalize typo.
+  * Release v0.3.2 (#13)
+
+v0.3.2 / 2018-06-19
+===================
+
+  * Release v0.3.2
   * better programmable declaration files.
   * add ci and npm badget to README.md
   * Release v0.3.1 (#12)
