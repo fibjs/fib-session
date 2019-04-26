@@ -11,8 +11,8 @@ declare namespace FibSessionNS {
         api_token: (r: FibSessionNS.HttpRequest) => void;
     }
 
-    interface FibSessionConstructor<T = Class_DbConnection> {
-        new (conn: T, opts?: FibSessionNS.Options): void
+    interface FibSessionConstructor {
+        new (conn: FibKV.FibKVInstance | Class_DbConnection | FibPoolNS.FibPoolFunction<Class_DbConnection>, opts?: FibSessionNS.Options): void
         prototype: FibSessionInstance
     }
 }

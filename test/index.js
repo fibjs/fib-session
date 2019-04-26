@@ -47,9 +47,10 @@ let request_sessionid;
 let kv_db;
 let get_persistent_storage = (sid) => JSON.parse(kv_db.get(sid));
 
-function session_test(name, opts, _before, _after) {
+function session_test(name, opts, test_opts, _before, _after) {
     describe(name, () => {
-
+        var { use_kv = false } = test_opts;
+        
         before(() => {
             kv_db = new kv(_before(), opts);
         });
@@ -57,7 +58,10 @@ function session_test(name, opts, _before, _after) {
 
         describe('cookie auto', function () {
             before(() => {
-                session = new Session(conn, opts);
+                if (use_kv)
+                    session = new Session(kv_db, opts);
+                else
+                    session = new Session(conn, opts);
                 session.setup();
             });
 
@@ -1222,63 +1226,68 @@ function session_test(name, opts, _before, _after) {
 
 }
 
-session_test(
-    'SQLite', {
-        table_name: 'session',
-        domain: url.domain,
-        session_cache_timeout: delay * 2,
-        expires: 7 * 24 * 60 * 60 * 1000
-    },
-    () => conn = db.openSQLite('test.db'),
-    () => {
-        conn.close();
-        try {
-            fs.unlink('test.db')
-        } catch (e) {}
-    });
-
-session_test(
-    'SQLite pool', {
-        table_name: 'session',
-        domain: url.domain,
-        session_cache_timeout: delay * 2,
-    },
-    () => conn = pool(() => db.openSQLite('test.db'), 10, 1 * 1000),
-    () => {
-        let time_limit = new Date().getTime() + 3000;
-        while (conn.connections() && new Date().getTime() < time_limit)
-            coroutine.sleep(10);
-        try {
-            fs.unlink('test.db')
-        } catch (e) {}
-    });
-
-const isTestMysql = !!process.env.FIB_SESSION_TEST_MYSQL
-isTestMysql && session_test(
-    'MySQL', {
-        table_name: 'session',
-        domain: url.domain,
-        session_cache_timeout: delay * 2,
-    },
-    () => conn = db.openMySQL(`mysql://${conf.user}:${conf.password}@localhost/${conf.database}`),
-    () => {
-        try {
-            conn.execute('DROP TABLE session')
-        } catch (e) {}
-        conn.close();
-    });
-
-isTestMysql && session_test(
-    'MySQL pool', {
-        table_name: 'session',
-        domain: url.domain,
-        session_cache_timeout: delay * 2,
-    },
-    () => conn = pool(() => db.openMySQL(`mysql://${conf.user}:${conf.password}@localhost/${conf.database}`), 10, 1 * 1000),
-    () => {
-        try {
-            conn.execute('DROP TABLE session')
-        } catch (e) {}
-    });
+;[
+    { use_kv: true },
+    { use_kv: false },
+].forEach((test_opts) => {
+    session_test(
+        'SQLite', {
+            table_name: 'session',
+            domain: url.domain,
+            session_cache_timeout: delay * 2,
+            expires: 7 * 24 * 60 * 60 * 1000
+        }, test_opts,
+        () => conn = db.openSQLite('test.db'),
+        () => {
+            conn.close();
+            try {
+                fs.unlink('test.db')
+            } catch (e) {}
+        });
+    
+    session_test(
+        'SQLite pool', {
+            table_name: 'session',
+            domain: url.domain,
+            session_cache_timeout: delay * 2,
+        }, test_opts,
+        () => conn = pool(() => db.openSQLite('test.db'), 10, 1 * 1000),
+        () => {
+            let time_limit = new Date().getTime() + 3000;
+            while (conn.connections() && new Date().getTime() < time_limit)
+                coroutine.sleep(10);
+            try {
+                fs.unlink('test.db')
+            } catch (e) {}
+        });
+    
+    const isTestMysql = !!process.env.FIB_SESSION_TEST_MYSQL
+    isTestMysql && session_test(
+        'MySQL', {
+            table_name: 'session',
+            domain: url.domain,
+            session_cache_timeout: delay * 2,
+        }, test_opts,
+        () => conn = db.openMySQL(`mysql://${conf.user}:${conf.password}@localhost/${conf.database}`),
+        () => {
+            try {
+                conn.execute('DROP TABLE session')
+            } catch (e) {}
+            conn.close();
+        });
+    
+    isTestMysql && session_test(
+        'MySQL pool', {
+            table_name: 'session',
+            domain: url.domain,
+            session_cache_timeout: delay * 2,
+        }, test_opts,
+        () => conn = pool(() => db.openMySQL(`mysql://${conf.user}:${conf.password}@localhost/${conf.database}`), 10, 1 * 1000),
+        () => {
+            try {
+                conn.execute('DROP TABLE session')
+            } catch (e) {}
+        });
+});
 
 test.run(console.DEBUG);

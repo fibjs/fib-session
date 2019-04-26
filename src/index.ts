@@ -8,8 +8,13 @@ import proxy = require('./proxy');
 
 import jwt = require('./jwt');
 
-const Session = function (conn: Class_DbConnection | FibPoolNS.FibPoolFunction<Class_DbConnection>, opts: FibSessionNS.Options = {}): void {
-    const kv_db = new FibKv(conn, opts);
+const Session = function (conn: FibKV.FibKVInstance | Class_DbConnection | FibPoolNS.FibPoolFunction<Class_DbConnection>, opts: FibSessionNS.Options = {}): void {
+    let kv_db: FibKV.FibKVInstance
+    if (conn instanceof FibKv)
+        kv_db = conn
+    else
+        kv_db = new FibKv(conn, opts);
+
     const store: FibSessionNS.Store = get_store(kv_db, opts);
 
     // for test
