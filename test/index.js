@@ -1,17 +1,18 @@
-let test = require('test');
+const test = require('test');
 test.setup();
 
-let Session = require('../');
+const Session = require('../');
 
-let fs = require('fs');
-let path = require('path');
-let db = require('db');
-let http = require('http');
-let kv = require('fib-kv');
-let pool = require('fib-pool');
+const fs = require('fs');
+const path = require('path');
+const querystring = require('querystring');
+const db = require('db');
+const http = require('http');
+const kv = require('fib-kv');
+const pool = require('fib-pool');
 
-let util = require('util');
-let coroutine = require('coroutine');
+const util = require('util');
+const coroutine = require('coroutine');
 
 // the assertions before `wait()` might fail if the leading operations take too long to finish
 let delay = 125;
@@ -26,18 +27,18 @@ let url = {
         return this.protocol + '://' + this.domain + ':' + this.port
     },
 };
-let user_conf = {}
+let local_my_conf = {}
 let user_conf_file = path.resolve(__dirname, '../test-config.json')
 if (fs.exists(user_conf_file)) {
     try {
-        user_conf = require(user_conf_file)
+        local_my_conf = require(user_conf_file)
     } catch (e) {}
 }
-let conf = util.extend({}, {
-    "user": "username",
-    "password": "password",
-    "database": "test",
-}, user_conf);
+const my_conf = util.extend({}, {
+    "user": "root",
+    "password": "",
+    "database": "fibjs-test",
+}, local_my_conf);
 
 let conn;
 let session;
@@ -47,9 +48,9 @@ let request_sessionid;
 let kv_db;
 let get_persistent_storage = (sid) => JSON.parse(kv_db.get(sid));
 
-function session_test(name, opts, test_opts, _before, _after) {
-    describe(name, () => {
-        var { use_kv = false } = test_opts;
+function session_test(description, opts, test_opts, _before, _after) {
+    describe(`${description} - ${querystring.stringify(test_opts, null)}`, () => {
+        var { use_existed_kv = false } = test_opts;
         
         before(() => {
             kv_db = new kv(_before(), opts);
@@ -58,7 +59,7 @@ function session_test(name, opts, test_opts, _before, _after) {
 
         describe('cookie auto', function () {
             before(() => {
-                if (use_kv)
+                if (use_existed_kv)
                     session = new Session(kv_db, opts);
                 else
                     session = new Session(conn, opts);
@@ -1227,8 +1228,8 @@ function session_test(name, opts, test_opts, _before, _after) {
 }
 
 ;[
-    { use_kv: true },
-    { use_kv: false },
+    { use_existed_kv: true },
+    { use_existed_kv: false },
 ].forEach((test_opts) => {
     session_test(
         'SQLite', {
@@ -1268,7 +1269,7 @@ function session_test(name, opts, test_opts, _before, _after) {
             domain: url.domain,
             session_cache_timeout: delay * 2,
         }, test_opts,
-        () => conn = db.openMySQL(`mysql://${conf.user}:${conf.password}@localhost/${conf.database}`),
+        () => conn = db.openMySQL(`mysql://${my_conf.user}:${my_conf.password}@localhost/${my_conf.database}`),
         () => {
             try {
                 conn.execute('DROP TABLE session')
@@ -1282,7 +1283,7 @@ function session_test(name, opts, test_opts, _before, _after) {
             domain: url.domain,
             session_cache_timeout: delay * 2,
         }, test_opts,
-        () => conn = pool(() => db.openMySQL(`mysql://${conf.user}:${conf.password}@localhost/${conf.database}`), 10, 1 * 1000),
+        () => conn = pool(() => db.openMySQL(`mysql://${my_conf.user}:${my_conf.password}@localhost/${my_conf.database}`), 10, 1 * 1000),
         () => {
             try {
                 conn.execute('DROP TABLE session')

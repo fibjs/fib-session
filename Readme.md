@@ -1,9 +1,8 @@
 # fib-session
 
-[![Build Status](https://travis-ci.org/fibjs/fib-session.svg)](https://travis-ci.org/fibjs/fib-session)
 [![NPM version](https://img.shields.io/npm/v/fib-session.svg)](https://www.npmjs.org/package/fib-session)
-
-That's one fork version of [fib-session](https://github.com/fibjs/fib-session).
+[![Build Status](https://travis-ci.org/fibjs/fib-session.svg)](https://travis-ci.org/fibjs/fib-session)
+[![Build status](https://ci.appveyor.com/api/projects/status/ns3jmuw23pwcenhu?svg=true)](https://ci.appveyor.com/project/richardo2016/fib-session)
 
 Session middleware for fibjs
 
