@@ -44,14 +44,14 @@ const Session = function (conn: FibKV.FibKVInstance | Class_DbConnection | FibPo
             let obj = {};
             if (!sessionid || util.isEmpty(obj = store.get(sessionid))) {
                 r.sessionid = sessionid = uuid.random().hex();
-                const cookies: FibSessionNS.CookieJsonPayload = {
+                const cookies = <Class_HttpCookie>{
                     name: utils.sid(opts),
                     value: sessionid
                 };
                 if (opts.expires) {
                     cookies.expires = new Date(Date.now() + opts.expires);
                 }
-                r.response.addCookie(cookies as Class_HttpCookie);
+                r.response.addCookie(cookies);
             }
 
             r.session = proxy(store, obj, sessionid);

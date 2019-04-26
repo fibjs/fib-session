@@ -44,12 +44,6 @@ declare namespace FibSessionNS {
     interface Options extends StoreOptions, FibKvOptions {
         expires?: number;
     }
-    /* for Class_HttpCookie */
-    interface CookieJsonPayload {
-        name: string;
-        value: string;
-        expires?: Date;
-    }
     interface Store {
         get: (sid: FibSessionNS.IdNameType) => any;
         set: (sid: FibSessionNS.IdNameType, obj: FibSessionNS.Object) => FibSessionNS.IdNameType;
