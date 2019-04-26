@@ -2,12 +2,12 @@
 
 import util = require('util');
 
-const proxy: FibSessionNS.ObjectProxyGenerator = (
-    store: FibSessionNS.Store|null,
+const proxy: FibSessionNS.SessionProxyGenerator = (
+    store: FibSessionNS.Store | null,
     o: object,
     sessionid: string,
     tmp: FibSessionNS.ProxyTmp, jwt: boolean = false
-    ): FibSessionNS.ObjectProxy => {
+): FibSessionNS.SessionProxy => {
     return new Proxy(o || {}, {
         set: (target, key, value) => {
             if (key === 'sessionid') {

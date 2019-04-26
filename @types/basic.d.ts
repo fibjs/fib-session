@@ -5,11 +5,18 @@ declare namespace FibSessionNS {
     
     type IdNameType = string;
     type IdValueType = string;
-    
-    type ObjectProxy = ProxyHandler<Object>
 
-    interface ObjectProxyGenerator {
-        (store: Store|null, o: object, sessionid: string, tmp?: ProxyTmp, jwt?: boolean): ObjectProxy;
+    interface SessionObject {
+        id?: string | number
+        roles?: (string | number)[]
+        
+        [k: string]: any
+    }
+    
+    interface SessionProxy extends ProxyHandler<SessionObject>, SessionObject {}
+
+    interface SessionProxyGenerator {
+        (store: Store|null, o: object, sessionid: string, tmp?: ProxyTmp, jwt?: boolean): SessionProxy;
     }
     type ProxyTmp = any
     
@@ -57,6 +64,6 @@ declare namespace FibSessionNS {
     
     interface HttpRequest extends Class_HttpRequest {
         sessionid?: string;
-        session: ObjectProxy
+        session: SessionProxy
     }
 }

@@ -1,6 +1,8 @@
-/// <reference types="fibjs" />
+/// <reference types="@fibjs/types" />
 /// <reference path="basic.d.ts" />
+/// <reference path="class.d.ts" />
 
 declare module "fib-session" {
-    export = FibSessionNS.FibSessionClass
+    const mod: FibSessionNS.FibSessionConstructor
+    export = mod
 }

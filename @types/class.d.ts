@@ -1,7 +1,5 @@
 declare namespace FibSessionNS {
-    class FibSessionClass {
-        constructor (conn: any, opts?: FibSessionNS.Options);
-
+    interface FibSessionInstance {
         store: FibSessionNS.Store;
         setup: Function;
         get(sid: FibSessionNS.IdNameType): any;
@@ -11,5 +9,10 @@ declare namespace FibSessionNS {
         api_filter: (r: FibSessionNS.HttpRequest) => void;
 
         api_token: (r: FibSessionNS.HttpRequest) => void;
+    }
+
+    interface FibSessionConstructor<T = Class_DbConnection> {
+        new (conn: T, opts?: FibSessionNS.Options): void
+        prototype: FibSessionInstance
     }
 }

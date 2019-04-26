@@ -1,4 +1,4 @@
-const FibKv = require('fib-kv');
+import FibKv = require('fib-kv');
 
 import uuid = require('uuid');
 import util = require("util");
@@ -8,9 +8,9 @@ import proxy = require('./proxy');
 
 import jwt = require('./jwt');
 
-const Session = function (conn: any, opts: FibSessionNS.Options = {}): void {
+const Session = function (conn: Class_DbConnection | FibPoolNS.FibPoolFunction<Class_DbConnection>, opts: FibSessionNS.Options = {}): void {
     const kv_db = new FibKv(conn, opts);
-    let store: FibSessionNS.Store = get_store(kv_db, opts);
+    const store: FibSessionNS.Store = get_store(kv_db, opts);
 
     // for test
     this.store = store;
@@ -22,8 +22,8 @@ const Session = function (conn: any, opts: FibSessionNS.Options = {}): void {
     this.remove = (sid: FibSessionNS.IdNameType) => store.remove(sid);
 
     // JWT(JSON Web Token)
-    let jwt_algo = utils.jwt_algo(opts);
-    let jwt_key = utils.jwt_key(opts);
+    const jwt_algo = utils.jwt_algo(opts);
+    const jwt_key = utils.jwt_key(opts);
     if (jwt_algo && jwt_key) {
         this.getToken = jwt.getToken(jwt_algo);
         this.setTokenCookie = jwt.setTokenCookie(jwt_algo, utils.sid(opts));
@@ -60,7 +60,7 @@ const Session = function (conn: any, opts: FibSessionNS.Options = {}): void {
         if (jwt_algo && jwt_key) {
             jwt.filter(r, jwt_algo, jwt_key, utils.sid(opts), proxy);
         } else {
-            let obj;
+            let obj = {};
             if (!sessionid || !(obj = store.get(sessionid))) {
                 r.sessionid = sessionid = uuid.random().hex();
                 r.session = proxy(store, obj, sessionid, true);
@@ -78,6 +78,6 @@ const Session = function (conn: any, opts: FibSessionNS.Options = {}): void {
 
         store.set(r.sessionid, r.session);
     }
-}
+} as any as FibSessionNS.FibSessionConstructor
 
 export = Session;

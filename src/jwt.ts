@@ -39,7 +39,7 @@ export function getPayload (text: string, key: string, algo: string) {
   }
 }
 
-export function filter (r: FibSessionNS.HttpRequest, jwt_algo: string, jwt_key: string, cookie_name: string, proxy: FibSessionNS.ObjectProxyGenerator) {
+export function filter (r: FibSessionNS.HttpRequest, jwt_algo: string, jwt_key: string, cookie_name: string, proxy: FibSessionNS.SessionProxyGenerator) {
   let obj;
   if (r.sessionid) {
     obj = getPayload(r.sessionid, jwt_key, jwt_algo);
