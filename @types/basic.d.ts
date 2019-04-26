@@ -20,11 +20,6 @@ declare namespace FibSessionNS {
     }
     type ProxyTmp = any
     
-    interface Store {
-        get: Function;
-        set: Function;
-        remove: Function;
-    }
     interface StoreOptions {
         session_cache_size?: number;
         session_cache_timeout?: number;
@@ -55,12 +50,11 @@ declare namespace FibSessionNS {
         value: string;
         expires?: Date;
     }
-    interface KVSource {
-        get: Function;
-        set: Function;
-        remove: Function;
+    interface Store {
+        get: (sid: FibSessionNS.IdNameType) => any;
+        set: (sid: FibSessionNS.IdNameType, obj: FibSessionNS.Object) => FibSessionNS.IdNameType;
+        remove: (sid: FibSessionNS.IdNameType) => boolean;
     }
-    interface Store extends KVSource {}
     
     interface HttpRequest extends Class_HttpRequest {
         sessionid?: string;

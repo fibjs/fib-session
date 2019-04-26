@@ -1,12 +1,12 @@
 import util = require('util');
 import * as utils from './utils';
 
-export = (kv_db: FibSessionNS.KVSource, opts: FibSessionNS.StoreOptions = {}): FibSessionNS.Store => {
+export = (kv_db: FibKV.FibKVInstance, opts: FibSessionNS.StoreOptions = {}): FibSessionNS.Store => {
     const timers = {};
     const cache = new util.LruCache(utils.cache_size(opts), utils.cache_timeout(opts));
 
     const fetch = (sid: FibSessionNS.IdNameType) => {
-        const v = cache.get(sid, sid => JSON.parse(kv_db.get(sid) || "{}"));
+        const v = cache.get(sid, (sid: string) => JSON.parse(kv_db.get(sid) || "{}"));
         cache.set(sid, v);
         return v;
     };
