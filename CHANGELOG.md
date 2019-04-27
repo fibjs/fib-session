@@ -1,7 +1,18 @@
 
-v0.4.0 / 2018-11-23
+v0.4.1 / 2019-04-27
 ==================
 
+  * test case robust.
+  * remove useless typo
+  * typo robust.
+  * enable mysql test in travis-ci; add appveyor ci
+  * support use existed kv instance as constructor's input
+  * upgrade dependencies.
+
+v0.4.0 / 2018-11-23
+===================
+
+  * Release v0.4.0
   * normalize typo.
   * Release v0.3.2 (#13)
 
