@@ -57,13 +57,18 @@ function session_test(description, opts, test_opts, _before, _after) {
         });
         after(_after);
 
+        function setup_session(_opts) {
+            if (use_existed_kv)
+                session = new Session(kv_db, _opts);
+            else
+                session = new Session(conn, _opts);
+
+            session.setup();
+        }
+
         describe('cookie auto', function () {
             before(() => {
-                if (use_existed_kv)
-                    session = new Session(kv_db, opts);
-                else
-                    session = new Session(conn, opts);
-                session.setup();
+                setup_session(opts);
             });
 
             it('server', () => {
@@ -372,8 +377,7 @@ function session_test(description, opts, test_opts, _before, _after) {
 
         describe('cookie path', function () {
             before(() => {
-                session = new Session(conn, opts);
-                session.setup();
+                setup_session(opts);
             });
 
             it('server', () => {
@@ -437,8 +441,7 @@ function session_test(description, opts, test_opts, _before, _after) {
 
         describe('api', function () {
             before(() => {
-                session = new Session(conn, opts);
-                session.setup();
+                setup_session(opts);
             });
 
             function get_value(res, key = 'sessionID') {
@@ -913,11 +916,10 @@ function session_test(description, opts, test_opts, _before, _after) {
             let jwt_req_session = null;
             let session_jwt_key = '98DE76B1'; //HS256是对称签名，所以加密和验证的key一样
             before(() => {
-                session = new Session(conn, {
+                setup_session({
                     session_jwt_algo: 'HS256',
                     session_jwt_key: session_jwt_key
                 });
-                session.setup();
             });
             it('check token', () => {
                 ++url.port;
@@ -1008,11 +1010,10 @@ function session_test(description, opts, test_opts, _before, _after) {
                 "name": "Frank"
             };
             before(() => {
-                session = new Session(conn, {
+                setup_session({
                     session_jwt_algo: 'HS256',
                     session_jwt_key: session_jwt_key
-                }); - 9
-                session.setup();
+                });
             });
 
             function get_value(res, key = 'sessionID') {
