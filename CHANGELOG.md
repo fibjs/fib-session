@@ -1,7 +1,14 @@
 
-v0.4.1 / 2019-04-27
+v0.4.2 / 2019-12-11
 ==================
 
+  * fix proxy traps error in strict mode.
+  * add test fibjs target.
+
+v0.4.1 / 2019-04-27
+===================
+
+  * Release v0.4.1
   * test case robust.
   * remove useless typo
   * typo robust.
@@ -40,8 +47,16 @@ v0.3.0 / 2018-06-18
   * migrate source to typescript.
   * v0.2.1
   * fix:session expires Invalid (#10)
+
+v0.2.0 / 2018-02-09
+===================
+
   * v0.2.0
   *  fix testcase; fix if condition in cookie_filter; add getter for sessionid in proxy; setter throws error when setting the sessionid (#9)
+
+v0.1.2 / 2017-12-28
+===================
+
   * v0.1.2
   * support to set expires of cookie (#8)
   * Update store.js (#7)
