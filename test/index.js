@@ -14,6 +14,8 @@ const pool = require('fib-pool');
 const util = require('util');
 const coroutine = require('coroutine');
 
+const { startServer, stopServer } = require('./spec_helper');
+
 // the assertions before `wait()` might fail if the leading operations take too long to finish
 let delay = 125;
 let wait = function (n = delay) {
@@ -71,10 +73,13 @@ function session_test(description, opts, test_opts, _before, _after) {
                 setup_session(opts);
             });
 
+            let srv;
+            after(() => stopServer(srv));
+
             it('server', () => {
                 ++url.port;
 
-                let srv = new http.Server(url.port, [
+                srv = new http.Server(url.port, [
                     session.cookie_filter,
                     {
                         '^/user$': (r) => r.session && (r.session.username = r.query.username),
@@ -94,7 +99,7 @@ function session_test(description, opts, test_opts, _before, _after) {
                         request_sessionid = r.session.sessionid;
                     }
                 ]);
-                srv.asyncRun();
+                startServer(srv);
             });
 
             it("expire check",() => {
@@ -379,10 +384,13 @@ function session_test(description, opts, test_opts, _before, _after) {
             before(() => {
                 setup_session(opts);
             });
+            
+            let srv;
+            after(() => stopServer(srv));
 
             it('server', () => {
                 ++url.port;
-                let srv = new http.Server(url.port, [
+                srv = new http.Server(url.port, [
                     session.cookie_filter,
                     {
                         '^/user$': (r) => r.session && (r.session.username = r.query.username),
@@ -396,7 +404,7 @@ function session_test(description, opts, test_opts, _before, _after) {
                         request_sessionid = r.sessionid;
                     }
                 ]);
-                srv.asyncRun();
+                startServer(srv);
             });
 
             it('without/with given path', () => {
@@ -448,9 +456,12 @@ function session_test(description, opts, test_opts, _before, _after) {
                 return JSON.parse(res.data.toString())[key];
             }
 
+            let srv;
+            after(() => stopServer(srv));
+
             it('server', () => {
                 ++url.port;
-                let srv = new http.Server(url.port, [
+                srv = new http.Server(url.port, [
                     session.api_filter,
                     {
                         '^/session$': session.api_token,
@@ -470,7 +481,7 @@ function session_test(description, opts, test_opts, _before, _after) {
                         request_sessionid = r.sessionid;
                     }
                 ]);
-                srv.asyncRun();
+                startServer(srv);
             });
 
             it('get sessionID without the given path', () => {
@@ -923,7 +934,7 @@ function session_test(description, opts, test_opts, _before, _after) {
             });
             it('check token', () => {
                 ++url.port;
-                let srv = new http.Server(url.port, [
+                srv = new http.Server(url.port, [
                     session.cookie_filter,
                     (r) => {
                         if (r.address != '/login' && (!r.session || !r.session.id > 0)) {
@@ -962,7 +973,7 @@ function session_test(description, opts, test_opts, _before, _after) {
                         }
                     }
                 ]);
-                srv.asyncRun();
+                startServer(srv);
                 let client = new http.Client();
                 //not login
                 res = client.get(url.host + '/jwt');
@@ -1019,9 +1030,13 @@ function session_test(description, opts, test_opts, _before, _after) {
             function get_value(res, key = 'sessionID') {
                 return JSON.parse(res.data.toString())[key];
             }
+
+            let srv;
+            after(() => stopServer(srv));
+            
             it('server', () => {
                 ++url.port;
-                let srv = new http.Server(url.port, [
+                srv = new http.Server(url.port, [
                     (r) => {
                         try {
                             session.api_filter(r);
@@ -1059,7 +1074,7 @@ function session_test(description, opts, test_opts, _before, _after) {
                         request_sessionid = r.sessionid;
                     }
                 ]);
-                srv.asyncRun();
+                startServer(srv);
             });
             it('get sessionID without the given path', () => {
                 let res = new http.Client().get(url.host + '/user?id=300&username=lion');
@@ -1292,4 +1307,5 @@ function session_test(description, opts, test_opts, _before, _after) {
         });
 });
 
-test.run(console.DEBUG);
+const hr = test.run(console.DEBUG);
+process.exit(hr);
