@@ -1,3 +1,4 @@
+'use strict';
 const test = require('test');
 test.setup();
 
@@ -416,7 +417,7 @@ function session_test(description, opts, test_opts, _before, _after) {
                 // assert.equal(request_session, undefined);
                 // assert.equal(res.cookies.length, 0);
 
-                res = client.get(url.host + '/session');
+                let res = client.get(url.host + '/session');
 
                 assert.equal(request_sessionid.length, 32);
                 assert.equal(JSON.stringify(request_session), '{}');
@@ -932,6 +933,9 @@ function session_test(description, opts, test_opts, _before, _after) {
                     session_jwt_key: session_jwt_key
                 });
             });
+
+            let srv;
+            after(() => stopServer(srv));
             it('check token', () => {
                 ++url.port;
                 srv = new http.Server(url.port, [
@@ -975,8 +979,8 @@ function session_test(description, opts, test_opts, _before, _after) {
                 ]);
                 startServer(srv);
                 let client = new http.Client();
-                //not login
-                res = client.get(url.host + '/jwt');
+                // not login
+                let res = client.get(url.host + '/jwt');
                 var txt = res.data.toString();
                 assert.equal(txt, 'redirect');
                 //login

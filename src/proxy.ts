@@ -21,7 +21,7 @@ const proxy: FibSessionNS.SessionProxyGenerator = (
                 if (!tmp && store)
                     store.set(sessionid, target);
             }
-            return value;
+            return true;
         },
         deleteProperty: (target, key) => {
             if (jwt && !util.isEmpty(target)) {
@@ -31,7 +31,7 @@ const proxy: FibSessionNS.SessionProxyGenerator = (
             if (!tmp && store)
                 store.set(sessionid, target);
             
-            return false;
+            return true;
         },
         get: (target, key) => {
             if (key === 'sessionid') {
