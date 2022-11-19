@@ -8,7 +8,7 @@ import proxy = require('./proxy');
 
 import jwt = require('./jwt');
 
-const Session = function (conn: FibKV.FibKVInstance | Class_DbConnection | FibPoolNS.FibPoolDipperFn<Class_DbConnection>, opts: FibSessionNS.Options = {}): void {
+const Session = function (conn: FibKV.FibKVInstance | Class_DbConnection | FibPoolNS.FibPool<Class_DbConnection>, opts: FibSessionNS.Options = {}): void {
     let kv_db: FibKV.FibKVInstance
     if (conn instanceof FibKv)
         kv_db = conn
