@@ -1,3 +1,5 @@
+/// <reference types="fib-kv" />
+
 declare namespace FibSessionNS {
     interface FibSessionInstance {
         store: FibSessionNS.Store;
