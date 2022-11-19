@@ -1,7 +1,13 @@
 
-v0.5.0 / 2022-11-20
+v0.5.1 / 2022-11-20
 ==================
 
+  * fix: typo.
+
+v0.5.0 / 2022-11-20
+===================
+
+  * Release v0.5.0
   * chore: update deps, adapt to fib-pool's types, fix test for latest fibjs.
 
 v0.4.2 / 2019-12-11

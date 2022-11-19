@@ -1,6 +1,6 @@
 {
   "name": "fib-session",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Simple session middleware for fibjs",
   "main": "lib/index.js",
   "types": "@types/index.d.ts",
