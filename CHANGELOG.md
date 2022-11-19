@@ -1,7 +1,13 @@
 
-v0.4.2 / 2019-12-11
+v0.5.0 / 2022-11-20
 ==================
 
+  * chore: update deps, adapt to fib-pool's types, fix test for latest fibjs.
+
+v0.4.2 / 2019-12-11
+===================
+
+  * Release v0.4.2
   * fix proxy traps error in strict mode.
   * add test fibjs target.
 
