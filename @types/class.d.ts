@@ -12,7 +12,7 @@ declare namespace FibSessionNS {
     }
 
     interface FibSessionConstructor {
-        new (conn: FibKV.FibKVInstance | Class_DbConnection | FibPoolNS.FibPoolFunction<Class_DbConnection>, opts?: FibSessionNS.Options): void
+        new (conn: FibKV.FibKVInstance | Class_DbConnection | FibPoolNS.FibPoolDipperFn<Class_DbConnection>, opts?: FibSessionNS.Options): void
         prototype: FibSessionInstance
     }
 }

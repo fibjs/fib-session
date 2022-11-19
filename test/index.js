@@ -51,6 +51,10 @@ let request_sessionid;
 let kv_db;
 let get_persistent_storage = (sid) => JSON.parse(kv_db.get(sid));
 
+function resDataToObj (resData) {
+    return typeof resData === 'string' ? JSON.parse(resData.toString()) : resData;
+} 
+
 function session_test(description, opts, test_opts, _before, _after) {
     describe(`${description} - ${querystring.stringify(test_opts, null)}`, () => {
         var { use_existed_kv = false } = test_opts;
@@ -454,7 +458,8 @@ function session_test(description, opts, test_opts, _before, _after) {
             });
 
             function get_value(res, key = 'sessionID') {
-                return JSON.parse(res.data.toString())[key];
+                const data = resDataToObj(res.data);
+                return data[key];
             }
 
             let srv;
@@ -533,7 +538,7 @@ function session_test(description, opts, test_opts, _before, _after) {
 
             it('get sessionID with invalid sessionID', () => {
                 let res = new http.Client().get(url.host + '/session');
-                let sid = JSON.parse(res.data.toString()).sessionID;
+                let sid = resDataToObj(res.data).sessionID;
 
                 assert.equal(sid.length, 32);
                 assert.equal(request_sessionid, sid);
@@ -551,7 +556,7 @@ function session_test(description, opts, test_opts, _before, _after) {
                         sessionID: save_id
                     }
                 });
-                sid = JSON.parse(res.data.toString()).sessionID;
+                sid = resDataToObj(res.data).sessionID;
 
                 assert.equal(sid.length, 32);
                 assert.equal(request_sessionid, sid);
