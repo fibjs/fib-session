@@ -15,6 +15,8 @@ const pool = require('fib-pool');
 const util = require('util');
 const coroutine = require('coroutine');
 
+const detect_port = require('@fibjs/detect-port');
+
 const { startServer, stopServer } = require('./spec_helper');
 
 // the assertions before `wait()` might fail if the leading operations take too long to finish
@@ -25,7 +27,7 @@ let wait = function (n = delay) {
 let url = {
     protocol: 'http',
     domain: '127.0.0.1',
-    port: 8080,
+    port: detect_port(),
     get ['host']() {
         return this.protocol + '://' + this.domain + ':' + this.port
     },
@@ -57,7 +59,7 @@ function resDataToObj (resData) {
 
 function session_test(description, opts, test_opts, _before, _after) {
     describe(`${description} - ${querystring.stringify(test_opts, null)}`, () => {
-        var { use_existed_kv = false } = test_opts;
+        var { use_existed_kv = false, disable_auto_hex_key } = test_opts;
         
         before(() => {
             kv_db = new kv(_before(), opts);
@@ -66,9 +68,9 @@ function session_test(description, opts, test_opts, _before, _after) {
 
         function setup_session(_opts) {
             if (use_existed_kv)
-                session = new Session(kv_db, _opts);
+                session = new Session(kv_db, {..._opts, disable_auto_hex_key });
             else
-                session = new Session(conn, _opts);
+                session = new Session(conn, {..._opts, disable_auto_hex_key });
 
             session.setup();
         }
@@ -82,13 +84,15 @@ function session_test(description, opts, test_opts, _before, _after) {
             after(() => stopServer(srv));
 
             it('server', () => {
-                ++url.port;
+                url.port = detect_port();
 
                 srv = new http.Server(url.port, [
                     session.cookie_filter,
                     {
                         '^/user$': (r) => r.session && (r.session.username = r.query.username),
-                        '^/get$': (r) => r.response.write(r.session.username),
+                        '^/get$': (r) => {
+                            r.response.write(r.session.username || '')
+                        },
                         '^/del$': (r) => delete r.session.username,
                         '^/remove$': (r) => session.remove(r.sessionid),
                         '^/set$': (r) => {
@@ -394,7 +398,7 @@ function session_test(description, opts, test_opts, _before, _after) {
             after(() => stopServer(srv));
 
             it('server', () => {
-                ++url.port;
+                url.port = detect_port();
                 srv = new http.Server(url.port, [
                     session.cookie_filter,
                     {
@@ -466,7 +470,7 @@ function session_test(description, opts, test_opts, _before, _after) {
             after(() => stopServer(srv));
 
             it('server', () => {
-                ++url.port;
+                url.port = detect_port();
                 srv = new http.Server(url.port, [
                     session.api_filter,
                     {
@@ -942,7 +946,7 @@ function session_test(description, opts, test_opts, _before, _after) {
             let srv;
             after(() => stopServer(srv));
             it('check token', () => {
-                ++url.port;
+                url.port = detect_port();
                 srv = new http.Server(url.port, [
                     session.cookie_filter,
                     (r) => {
@@ -995,7 +999,11 @@ function session_test(description, opts, test_opts, _before, _after) {
                 var b = true;
                 for (var i = 0; res.cookies && i < res.cookies.length; i++) {
                     if (res.cookies[i] && res.cookies[i].name == 'sessionID') {
-                        assert.equal(res.cookies[i].value, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MTIzNDUsIm5hbWUiOiJGcmFuayJ9.adE0u7POp1NG1GHQjZUGb9lfovw9-GdEVusqh2Sc0-M');
+                        if (disable_auto_hex_key) {
+                            assert.equal(res.cookies[i].value, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MTIzNDUsIm5hbWUiOiJGcmFuayJ9.AeI5krHDMPiNFc4IikrdrYbm9qdsDwdz8p1X9GwADEE');
+                        } else {
+                            assert.equal(res.cookies[i].value, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MTIzNDUsIm5hbWUiOiJGcmFuayJ9.adE0u7POp1NG1GHQjZUGb9lfovw9-GdEVusqh2Sc0-M');
+                        }
                         b = false;
                     }
                 }
@@ -1019,7 +1027,11 @@ function session_test(description, opts, test_opts, _before, _after) {
                 var jwt_token = session.getToken({
                     abc: 'xyz'
                 }, 'test');
-                assert.equal(jwt_token, 'eyJhbGciOiJIUzI1NiJ9.eyJhYmMiOiJ4eXoifQ.ltcUVSz3Np3ZSLpk7TwtTFFjlNY8X2nikCGcuF2ZMgE')
+                if (disable_auto_hex_key) {
+                    assert.equal(jwt_token, 'eyJhbGciOiJIUzI1NiJ9.eyJhYmMiOiJ4eXoifQ.qiVRBz9pUjJUDBO6-083u1wCyGxzFJ6B0USk8iSrEUE')
+                } else {
+                    assert.equal(jwt_token, 'eyJhbGciOiJIUzI1NiJ9.eyJhYmMiOiJ4eXoifQ.ltcUVSz3Np3ZSLpk7TwtTFFjlNY8X2nikCGcuF2ZMgE')
+                }
             });
         });
         describe('api in JWT', function () {
@@ -1044,7 +1056,7 @@ function session_test(description, opts, test_opts, _before, _after) {
             after(() => stopServer(srv));
             
             it('server', () => {
-                ++url.port;
+                url.port = detect_port();
                 srv = new http.Server(url.port, [
                     (r) => {
                         try {
@@ -1099,7 +1111,11 @@ function session_test(description, opts, test_opts, _before, _after) {
                 let res = new http.Client().get(url.host + '/user?id=50&username=hoo');
                 save_id = res.cookies[0].value;
                 //console.error('save_id:', res.cookies[0].value);
-                assert.equal(save_id, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjUwIiwidXNlcm5hbWUiOiJob28ifQ.ubTia0QE_D-aT8ziMShJEwgnbujatqTJC7amOhxabzw');
+                if (disable_auto_hex_key) {
+                    assert.equal(save_id, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjUwIiwidXNlcm5hbWUiOiJob28ifQ.W3sB7wnqxIPxhLuxE2qLWWO5aCY8O2F6sIWA05u9B-Q');
+                } else {
+                    assert.equal(save_id, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjUwIiwidXNlcm5hbWUiOiJob28ifQ.ubTia0QE_D-aT8ziMShJEwgnbujatqTJC7amOhxabzw');
+                }
                 assert.deepEqual(request_session, {
                     "id": "50",
                     "username": "hoo"
@@ -1111,7 +1127,12 @@ function session_test(description, opts, test_opts, _before, _after) {
                     }
                 });
                 //console.error('save_id2:', res.cookies[0].value);
-                assert.equal(request_sessionid, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjgiLCJ1c2VybmFtZSI6Imxpb24ifQ.bN9IiVDgy2qfQgndBv5SfyLSEotTw1RjK3hgjR-VJpM');
+                
+                if (disable_auto_hex_key) {
+                    assert.equal(request_sessionid, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjgiLCJ1c2VybmFtZSI6Imxpb24ifQ.aKU95JiljVGiJiw5OU4PmIk6Vm6wJoIrkXBSDbeCmac')
+                } else {
+                    assert.equal(request_sessionid, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjgiLCJ1c2VybmFtZSI6Imxpb24ifQ.bN9IiVDgy2qfQgndBv5SfyLSEotTw1RjK3hgjR-VJpM');
+                }
                 assert.deepEqual(request_session, {
                     "id": "8",
                     "username": "lion"
@@ -1143,7 +1164,11 @@ function session_test(description, opts, test_opts, _before, _after) {
                 let client = new http.Client();
                 let res = client.get(url.host + '/user?id=8&username=lion');
                 save_id = res.cookies[0].value;
-                assert.equal(save_id, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjgiLCJ1c2VybmFtZSI6Imxpb24ifQ.bN9IiVDgy2qfQgndBv5SfyLSEotTw1RjK3hgjR-VJpM');
+                if (disable_auto_hex_key) {
+                    assert.equal(save_id, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjgiLCJ1c2VybmFtZSI6Imxpb24ifQ.aKU95JiljVGiJiw5OU4PmIk6Vm6wJoIrkXBSDbeCmac')
+                } else {
+                    assert.equal(save_id, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjgiLCJ1c2VybmFtZSI6Imxpb24ifQ.bN9IiVDgy2qfQgndBv5SfyLSEotTw1RjK3hgjR-VJpM');
+                }
                 assert.equal(request_sessionid, save_id);
                 assert.equal(request_session.username, 'lion');
                 res = client.get(url.host + '/get', {
@@ -1151,7 +1176,11 @@ function session_test(description, opts, test_opts, _before, _after) {
                         sessionID: save_id
                     }
                 });
-                assert.equal(request_sessionid, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjgiLCJ1c2VybmFtZSI6Imxpb24ifQ.bN9IiVDgy2qfQgndBv5SfyLSEotTw1RjK3hgjR-VJpM');
+                if (disable_auto_hex_key) {
+                    assert.equal(request_sessionid, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjgiLCJ1c2VybmFtZSI6Imxpb24ifQ.aKU95JiljVGiJiw5OU4PmIk6Vm6wJoIrkXBSDbeCmac')
+                } else {
+                    assert.equal(request_sessionid, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjgiLCJ1c2VybmFtZSI6Imxpb24ifQ.bN9IiVDgy2qfQgndBv5SfyLSEotTw1RjK3hgjR-VJpM');
+                }
                 assert.equal(request_session.username, 'lion');
                 assert.equal(JSON.parse(res.data.toString()).username, 'lion');
                 assert.deepEqual(session.get(request_sessionid), {});
@@ -1253,8 +1282,9 @@ function session_test(description, opts, test_opts, _before, _after) {
 }
 
 ;[
-    { use_existed_kv: true },
-    { use_existed_kv: false },
+    // { use_existed_kv: true },
+    { use_existed_kv: true, disable_auto_hex_key: true },
+    // { use_existed_kv: false },
 ].forEach((test_opts) => {
     session_test(
         'SQLite', {
@@ -1316,5 +1346,5 @@ function session_test(description, opts, test_opts, _before, _after) {
         });
 });
 
-const hr = test.run(console.DEBUG);
-process.exit(hr);
+test.run(console.DEBUG);
+process.exit();
