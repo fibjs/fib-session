@@ -27,9 +27,6 @@ jobs:
         include:
         - os: windows-2019
           arch: x64
-          fibjs: 0.33.0
-        - os: windows-2019
-          arch: x64
           fibjs: 0.34.0
         - os: windows-2019
           arch: x64
@@ -40,9 +37,6 @@ jobs:
         - os: windows-2019
           arch: x64
           fibjs: 0.37.0
-        - os: windows-2019
-          arch: x86
-          fibjs: 0.33.0
         - os: windows-2019
           arch: x86
           fibjs: 0.34.0
@@ -57,9 +51,6 @@ jobs:
           fibjs: 0.37.0
         - os: ubuntu-20.04
           arch: x64
-          fibjs: 0.33.0
-        - os: ubuntu-20.04
-          arch: x64
           fibjs: 0.34.0
         - os: ubuntu-20.04
           arch: x64
@@ -72,9 +63,6 @@ jobs:
           fibjs: 0.37.0
         - os: ubuntu-20.04
           arch: x86
-          fibjs: 0.33.0
-        - os: ubuntu-20.04
-          arch: x86
           fibjs: 0.34.0
         - os: ubuntu-20.04
           arch: x86
@@ -85,9 +73,6 @@ jobs:
         - os: ubuntu-20.04
           arch: x86
           fibjs: 0.37.0
-        - os: macos-11
-          arch: x64
-          fibjs: 0.33.0
         - os: macos-11
           arch: x64
           fibjs: 0.34.0
