@@ -15,6 +15,8 @@ const pool = require('fib-pool');
 const util = require('util');
 const coroutine = require('coroutine');
 
+const detect_port = require('@fibjs/detect-port');
+
 const { startServer, stopServer } = require('./spec_helper');
 
 // the assertions before `wait()` might fail if the leading operations take too long to finish
@@ -25,7 +27,7 @@ let wait = function (n = delay) {
 let url = {
     protocol: 'http',
     domain: '127.0.0.1',
-    port: 8080,
+    port: detect_port(),
     get ['host']() {
         return this.protocol + '://' + this.domain + ':' + this.port
     },
@@ -82,7 +84,7 @@ function session_test(description, opts, test_opts, _before, _after) {
             after(() => stopServer(srv));
 
             it('server', () => {
-                ++url.port;
+                url.port = detect_port();
 
                 srv = new http.Server(url.port, [
                     session.cookie_filter,
@@ -396,7 +398,7 @@ function session_test(description, opts, test_opts, _before, _after) {
             after(() => stopServer(srv));
 
             it('server', () => {
-                ++url.port;
+                url.port = detect_port();
                 srv = new http.Server(url.port, [
                     session.cookie_filter,
                     {
@@ -468,7 +470,7 @@ function session_test(description, opts, test_opts, _before, _after) {
             after(() => stopServer(srv));
 
             it('server', () => {
-                ++url.port;
+                url.port = detect_port();
                 srv = new http.Server(url.port, [
                     session.api_filter,
                     {
@@ -944,7 +946,7 @@ function session_test(description, opts, test_opts, _before, _after) {
             let srv;
             after(() => stopServer(srv));
             it('check token', () => {
-                ++url.port;
+                url.port = detect_port();
                 srv = new http.Server(url.port, [
                     session.cookie_filter,
                     (r) => {
@@ -1054,7 +1056,7 @@ function session_test(description, opts, test_opts, _before, _after) {
             after(() => stopServer(srv));
             
             it('server', () => {
-                ++url.port;
+                url.port = detect_port();
                 srv = new http.Server(url.port, [
                     (r) => {
                         try {
