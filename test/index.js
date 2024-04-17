@@ -1282,9 +1282,9 @@ function session_test(description, opts, test_opts, _before, _after) {
 }
 
 ;[
-    // { use_existed_kv: true },
+    { use_existed_kv: true },
     { use_existed_kv: true, disable_auto_hex_key: true },
-    // { use_existed_kv: false },
+    { use_existed_kv: false },
 ].forEach((test_opts) => {
     session_test(
         'SQLite', {
