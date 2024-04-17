@@ -4,9 +4,9 @@ function inputIsBuffer (bufOrString: string | Class_Buffer): bufOrString is Clas
   return Buffer.isBuffer(bufOrString);
 }
 
-export function getToken (jwt_algo: string) {
+export function getToken (jwt_algo: string, opts?: FibSessionNS.FibJwtOptions) {
   return (obj: FibSessionNS.Object, key: string | Class_Buffer) => {
-    if (!inputIsBuffer(key))
+    if (!opts?.disable_auto_hex_key && !inputIsBuffer(key))
         key = new Buffer(key, 'hex')
     /**
      * jws.sign
@@ -18,10 +18,10 @@ export function getToken (jwt_algo: string) {
   }
 }
 
-export function setTokenCookie (jwt_algo: string, cookie_name: string) {
+export function setTokenCookie (jwt_algo: string, cookie_name: string, opts?: FibSessionNS.FibJwtOptions) {
   return (r: FibSessionNS.HttpRequest, obj: FibSessionNS.Object, key: string | Class_Buffer) => {
     r.session = obj;
-    if (!inputIsBuffer(key))
+    if (!opts?.disable_auto_hex_key && !inputIsBuffer(key))
         key = new Buffer(key, 'hex')
     r.sessionid = jws.sign({alg: jwt_algo}, obj, key);
 
@@ -34,8 +34,8 @@ export function setTokenCookie (jwt_algo: string, cookie_name: string) {
   };
 }
 
-export function getPayload (text: string, key: string | Class_Buffer, algo: string) {
-  if (!inputIsBuffer(key))
+export function getPayload (text: string, key: string | Class_Buffer, algo: string, opts?: FibSessionNS.FibJwtOptions) {
+  if (!opts?.disable_auto_hex_key && !inputIsBuffer(key))
     key = new Buffer(key, 'hex')
 
   if (jws.verify(text, key, algo)) {
@@ -50,10 +50,17 @@ export function getPayload (text: string, key: string | Class_Buffer, algo: stri
   }
 }
 
-export function filter (r: FibSessionNS.HttpRequest, jwt_algo: string, jwt_key: string, cookie_name: string, proxy: FibSessionNS.SessionProxyGenerator) {
+export function filter (
+  r: FibSessionNS.HttpRequest,
+  jwt_algo: string,
+  jwt_key: string,
+  cookie_name: string,
+  proxy: FibSessionNS.SessionProxyGenerator,
+  opts?: FibSessionNS.FibJwtOptions
+) {
   let obj;
   if (r.sessionid) {
-    obj = getPayload(r.sessionid, jwt_key, jwt_algo);
+    obj = getPayload(r.sessionid, jwt_key, jwt_algo, opts);
   }
   
   r.session = proxy(null, obj, r.sessionid, true, true);

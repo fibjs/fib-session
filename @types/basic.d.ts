@@ -41,7 +41,14 @@ declare namespace FibSessionNS {
         cache_size?: number;
         cache_timeout?: number;
     }
-    interface Options extends StoreOptions, FibKvOptions {
+    type FibJwtOptions = {
+      /**
+       * @description if disable_auto_hex_key is set, we would make sure all keys are hex string/Buffer
+       */
+      disable_auto_hex_key?: boolean
+    }
+    
+    interface Options extends StoreOptions, FibKvOptions, FibJwtOptions {
         expires?: number;
     }
     interface Store {

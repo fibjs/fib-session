@@ -29,9 +29,11 @@ const Session = function (conn: FibKV.FibKVInstance | Class_DbConnection | FibPo
     // JWT(JSON Web Token)
     const jwt_algo = utils.jwt_algo(opts);
     const jwt_key = utils.jwt_key(opts);
+    const fib_jwt_opts = { disable_auto_hex_key: opts.disable_auto_hex_key };
+
     if (jwt_algo && jwt_key) {
-        this.getToken = jwt.getToken(jwt_algo);
-        this.setTokenCookie = jwt.setTokenCookie(jwt_algo, utils.sid(opts));
+        this.getToken = jwt.getToken(jwt_algo, fib_jwt_opts);
+        this.setTokenCookie = jwt.setTokenCookie(jwt_algo, utils.sid(opts), fib_jwt_opts);
     }
 
     this.cookie_filter = (r: FibSessionNS.HttpRequest) => {
@@ -39,7 +41,7 @@ const Session = function (conn: FibKV.FibKVInstance | Class_DbConnection | FibPo
         r.sessionid = sessionid;
 
         if (jwt_algo && jwt_key) { //JWT
-            jwt.filter(r, jwt_algo, jwt_key, utils.sid(opts), proxy);
+            jwt.filter(r, jwt_algo, jwt_key, utils.sid(opts), proxy, fib_jwt_opts);
         } else {
             let obj = {};
             if (!sessionid || util.isEmpty(obj = store.get(sessionid))) {
@@ -63,7 +65,7 @@ const Session = function (conn: FibKV.FibKVInstance | Class_DbConnection | FibPo
         r.sessionid = sessionid || undefined;
 
         if (jwt_algo && jwt_key) {
-            jwt.filter(r, jwt_algo, jwt_key, utils.sid(opts), proxy);
+            jwt.filter(r, jwt_algo, jwt_key, utils.sid(opts), proxy, fib_jwt_opts);
         } else {
             let obj = {};
             if (!sessionid || !(obj = store.get(sessionid))) {
