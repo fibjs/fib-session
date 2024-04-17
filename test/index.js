@@ -88,7 +88,9 @@ function session_test(description, opts, test_opts, _before, _after) {
                     session.cookie_filter,
                     {
                         '^/user$': (r) => r.session && (r.session.username = r.query.username),
-                        '^/get$': (r) => r.response.write(r.session.username),
+                        '^/get$': (r) => {
+                            r.response.write(r.session.username || '')
+                        },
                         '^/del$': (r) => delete r.session.username,
                         '^/remove$': (r) => session.remove(r.sessionid),
                         '^/set$': (r) => {

@@ -1,7 +1,13 @@
 const jws = require('fib-jws');
 
+function inputIsBuffer (bufOrString: string | Class_Buffer): bufOrString is Class_Buffer {
+  return Buffer.isBuffer(bufOrString);
+}
+
 export function getToken (jwt_algo: string) {
-  return (obj: FibSessionNS.Object, key: string) => {
+  return (obj: FibSessionNS.Object, key: string | Class_Buffer) => {
+    if (!inputIsBuffer(key))
+        key = new Buffer(key, 'hex')
     /**
      * jws.sign
      * header={ alg: 'HS256' } 
@@ -13,8 +19,10 @@ export function getToken (jwt_algo: string) {
 }
 
 export function setTokenCookie (jwt_algo: string, cookie_name: string) {
-  return (r: FibSessionNS.HttpRequest, obj: FibSessionNS.Object, key: string) => {
+  return (r: FibSessionNS.HttpRequest, obj: FibSessionNS.Object, key: string | Class_Buffer) => {
     r.session = obj;
+    if (!inputIsBuffer(key))
+        key = new Buffer(key, 'hex')
     r.sessionid = jws.sign({alg: jwt_algo}, obj, key);
 
     r.response.addCookie({
@@ -26,7 +34,10 @@ export function setTokenCookie (jwt_algo: string, cookie_name: string) {
   };
 }
 
-export function getPayload (text: string, key: string, algo: string) {
+export function getPayload (text: string, key: string | Class_Buffer, algo: string) {
+  if (!inputIsBuffer(key))
+    key = new Buffer(key, 'hex')
+
   if (jws.verify(text, key, algo)) {
     var dc = jws.decode(text);
     if (dc && dc.payload) {
