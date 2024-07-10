@@ -1,13 +1,22 @@
 import util = require('util');
 import * as utils from './utils';
+const fc = require('fib-cache');
 
 export = (kv_db: FibKV.FibKVInstance, opts: FibSessionNS.StoreOptions = {}): FibSessionNS.Store => {
     const timers = {};
-    const cache = new util.LruCache(utils.cache_size(opts), utils.cache_timeout(opts));
+    const cache = new fc.LRU({
+        max: utils.cache_size(opts),
+        ttl: utils.cache_timeout(opts)
+    });
 
     const fetch = (sid: FibSessionNS.IdNameType) => {
-        const v = cache.get(sid, (sid: string) => JSON.parse(kv_db.get(sid) || "{}"));
-        cache.set(sid, v);
+        var v = cache.get(sid);
+
+        if(!v)
+        {
+            v = JSON.parse(kv_db.get(sid) || "{}");
+            cache.set(sid, v);
+        }
         return v;
     };
 
@@ -32,7 +41,7 @@ export = (kv_db: FibKV.FibKVInstance, opts: FibSessionNS.StoreOptions = {}): Fib
             delete timers[sid];
         }
 
-        cache.remove(sid);
+        cache.delete(sid);
         kv_db.remove(sid);
         return true;
     };

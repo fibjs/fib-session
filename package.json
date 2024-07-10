@@ -20,7 +20,6 @@
   ],
   "scripts": {
     "build": "fib-typify src -o lib",
-    "test": "fibjs test",
     "ci": "npm run build && npm run test",
     "ci-mysql": "npm run build && cross-env FIB_SESSION_TEST_MYSQL=1 npm run test",
     "ci-sqlite": "npm run build && npm run test"
@@ -36,7 +35,8 @@
   },
   "dependencies": {
     "fib-jws": "^0.4.1",
-    "fib-kv": "^1.3.1"
+    "fib-kv": "^1.3.1",
+    "fib-cache": "^1.1.0"
   },
   "devDependencies": {
     "@fibjs/ci": "^2.7.1",
