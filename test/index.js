@@ -739,8 +739,8 @@ function session_test(description, opts, test_opts, _before, _after) {
                 let client_a = new http.Client();
                 let client_b = new http.Client();
 
-                let sid_a = get_value(client_a.get(url.host + 'session'));
-                let sid_b = get_value(client_b.get(url.host + 'session'));
+                let sid_a = get_value(client_a.get(url.host + '/session'));
+                let sid_b = get_value(client_b.get(url.host + '/session'));
 
                 let res_a = client_a.get(url.host + '/user?username=lion', {
                     headers: {
@@ -821,7 +821,7 @@ function session_test(description, opts, test_opts, _before, _after) {
 
             it('simultaneous set the same session', () => {
                 let client = new http.Client();
-                let sid = get_value(client.get(url.host + 'session'));
+                let sid = get_value(client.get(url.host + '/session'));
 
                 let res_a;
                 setTimeout(() => {
@@ -884,7 +884,7 @@ function session_test(description, opts, test_opts, _before, _after) {
                 // req-b get // not updated
 
                 let client = new http.Client();
-                let sid = get_value(client.get(url.host + 'session'));
+                let sid = get_value(client.get(url.host + '/session'));
 
                 let res_a;
                 setTimeout(() => {
@@ -1238,7 +1238,7 @@ function session_test(description, opts, test_opts, _before, _after) {
                 // req-a set @ expire+
                 // req-b get // not updated
                 let client = new http.Client();
-                let sid = get_value(client.get(url.host + 'session'));
+                let sid = get_value(client.get(url.host + '/session'));
                 let res_a;
                 setTimeout(() => {
                     res_a = client.get(url.host + '/kv?k=username&v=lion', {

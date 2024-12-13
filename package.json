@@ -1,6 +1,6 @@
 {
   "name": "fib-session",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "Simple session middleware for fibjs",
   "main": "lib/index.js",
   "types": "@types/index.d.ts",
@@ -36,7 +36,7 @@
   "dependencies": {
     "fib-jws": "^0.4.1",
     "fib-kv": "^1.3.1",
-    "fib-cache": "^1.1.0"
+    "fib-cache": "^1.2.0"
   },
   "devDependencies": {
     "@fibjs/ci": "^2.7.1",
