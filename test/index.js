@@ -37,7 +37,7 @@ let user_conf_file = path.resolve(__dirname, '../test-config.json')
 if (fs.exists(user_conf_file)) {
     try {
         local_my_conf = require(user_conf_file)
-    } catch (e) {}
+    } catch (e) { }
 }
 const my_conf = util.extend({}, {
     "user": "root",
@@ -53,14 +53,14 @@ let request_sessionid;
 let kv_db;
 let get_persistent_storage = (sid) => JSON.parse(kv_db.get(sid));
 
-function resDataToObj (resData) {
+function resDataToObj(resData) {
     return typeof resData === 'string' ? JSON.parse(resData.toString()) : resData;
-} 
+}
 
 function session_test(description, opts, test_opts, _before, _after) {
     describe(`${description} - ${querystring.stringify(test_opts, null)}`, () => {
         var { use_existed_kv = false, disable_auto_hex_key } = test_opts;
-        
+
         before(() => {
             kv_db = new kv(_before(), opts);
         });
@@ -68,9 +68,9 @@ function session_test(description, opts, test_opts, _before, _after) {
 
         function setup_session(_opts) {
             if (use_existed_kv)
-                session = new Session(kv_db, {..._opts, disable_auto_hex_key });
+                session = new Session(kv_db, { ..._opts, disable_auto_hex_key });
             else
-                session = new Session(conn, {..._opts, disable_auto_hex_key });
+                session = new Session(conn, { ..._opts, disable_auto_hex_key });
 
             session.setup();
         }
@@ -89,13 +89,15 @@ function session_test(description, opts, test_opts, _before, _after) {
                 srv = new http.Server(url.port, [
                     session.cookie_filter,
                     {
-                        '^/user$': (r) => r.session && (r.session.username = r.query.username),
-                        '^/get$': (r) => {
+                        '/user': (r) => {
+                            r.session && (r.session.username = r.query.username)
+                        },
+                        '/get': (r) => {
                             r.response.write(r.session.username || '')
                         },
-                        '^/del$': (r) => delete r.session.username,
-                        '^/remove$': (r) => session.remove(r.sessionid),
-                        '^/set$': (r) => {
+                        '/del': (r) => delete r.session.username,
+                        '/remove': (r) => session.remove(r.sessionid),
+                        '/set': (r) => {
                             try {
                                 r.session.sessionid = r.sessionid;
                             } catch (e) {
@@ -111,14 +113,14 @@ function session_test(description, opts, test_opts, _before, _after) {
                 startServer(srv);
             });
 
-            it("expire check",() => {
+            it("expire check", () => {
                 let httpClient = new http.Client();
                 let res = httpClient.get(url.host + '/unKnownUrl');
-                let expires = httpClient.cookies[0].expires;    
+                let expires = httpClient.cookies[0].expires;
 
-                if(opts.expires){
+                if (opts.expires) {
                     assert.notEqual(new Date(expires).toString(), "Invalid Date")
-                }else{
+                } else {
                     assert.equal(new Date(expires).toString(), "Invalid Date");
                 }
             });
@@ -238,7 +240,7 @@ function session_test(description, opts, test_opts, _before, _after) {
                 });
 
                 res = client.get(url.host + '/del');
-                
+
                 assert.equal(request_session.username, undefined);
                 assert.equal(request_sessionid.length, 32);
                 assert.equal(res.cookies.length, 0);
@@ -249,9 +251,9 @@ function session_test(description, opts, test_opts, _before, _after) {
                 });
                 wait();
                 assert.deepEqual(get_persistent_storage(request_sessionid), {});
-                
+
                 res = client.get(url.host + '/get');
-                
+
                 assert.equal(request_session.username, undefined);
                 assert.equal(request_sessionid.length, 32);
 
@@ -393,7 +395,7 @@ function session_test(description, opts, test_opts, _before, _after) {
             before(() => {
                 setup_session(opts);
             });
-            
+
             let srv;
             after(() => stopServer(srv));
 
@@ -402,11 +404,21 @@ function session_test(description, opts, test_opts, _before, _after) {
                 srv = new http.Server(url.port, [
                     session.cookie_filter,
                     {
-                        '^/user$': (r) => r.session && (r.session.username = r.query.username),
-                        '^/get$': (r) => r.response.write(r.session.username),
-                        '^/del$': (r) => delete r.session.username,
-                        '^/remove$': (r) => session.remove(),
-                        '^/session$': (r) => r.response.write(r.sessionid),
+                        '/user': (r) => {
+                            r.session && (r.session.username = r.query.username)
+                        },
+                        '/get': (r) => {
+                            r.response.write(r.session.username)
+                        },
+                        '/del': (r) => {
+                            delete r.session.username
+                        },
+                        '/remove': (r) => {
+                            session.remove()
+                        },
+                        '/session': (r) => {
+                            r.response.write(r.sessionid)
+                        },
                     },
                     r => {
                         request_session = r.session;
@@ -474,14 +486,22 @@ function session_test(description, opts, test_opts, _before, _after) {
                 srv = new http.Server(url.port, [
                     session.api_filter,
                     {
-                        '^/session$': session.api_token,
-                        '^/user$': (r) => r.session && (r.session.username = r.query.username),
-                        '^/get$': (r) => r.response.write(JSON.stringify({
-                            username: r.session.username
-                        })),
-                        '^/del$': (r) => delete r.session.username,
-                        '^/remove$': (r) => session.remove(r.sessionid),
-                        '^/kv$': (r) => {
+                        '/session': session.api_token,
+                        '/user': (r) => {
+                            r.session && (r.session.username = r.query.username)
+                        },
+                        '/get': (r) => {
+                            r.response.write(JSON.stringify({
+                                username: r.session.username
+                            }))
+                        },
+                        '/del': (r) => {
+                            delete r.session.username
+                        },
+                        '/remove': (r) => {
+                            session.remove(r.sessionid)
+                        },
+                        '/kv': (r) => {
                             coroutine.sleep(delay * 4);
                             r.session[r.query.k] = r.query.v;
                         },
@@ -958,11 +978,11 @@ function session_test(description, opts, test_opts, _before, _after) {
                         }
                     },
                     {
-                        '^/jwt$': (r) => {
+                        '/jwt': (r) => {
                             jwt_req_session = r.session;
                             r.response.write('jwt')
                         },
-                        '^/login$': (r) => {
+                        '/login': (r) => {
                             session.setTokenCookie(r, {
                                 id: 12345,
                                 name: "Frank"
@@ -970,14 +990,14 @@ function session_test(description, opts, test_opts, _before, _after) {
                             jwt_req_session = r.session;
                             r.response.write('login')
                         },
-                        '^/jwt_update$': (r) => {
+                        '/jwt_update': (r) => {
                             try {
                                 r.session.color = 'red';
                             } catch (e) {
                                 r.response.write(e.message);
                             }
                         },
-                        '^/jwt_delete$': (r) => {
+                        '/jwt_delete': (r) => {
                             try {
                                 delete r.session.color;
                             } catch (e) {
@@ -1054,7 +1074,7 @@ function session_test(description, opts, test_opts, _before, _after) {
 
             let srv;
             after(() => stopServer(srv));
-            
+
             it('server', () => {
                 url.port = detect_port();
                 srv = new http.Server(url.port, [
@@ -1068,19 +1088,19 @@ function session_test(description, opts, test_opts, _before, _after) {
                         }
                     },
                     {
-                        '^/session$': (r) => {
+                        '/session': (r) => {
                             r.response.write('session-ok');
                         },
-                        '^/user$': (r) => {
+                        '/user': (r) => {
                             session.setTokenCookie && session.setTokenCookie(r, {
                                 id: r.query.id || "1",
                                 username: r.query.username
                             }, session_jwt_key);
                         },
-                        '^/get$': (r) => r.response.write(JSON.stringify({
+                        '/get': (r) => r.response.write(JSON.stringify({
                             username: r.session.username
                         })),
-                        '^/del$': (r) => {
+                        '/del': (r) => {
                             try {
                                 delete r.session.username
                             } catch (e) {
@@ -1127,7 +1147,7 @@ function session_test(description, opts, test_opts, _before, _after) {
                     }
                 });
                 //console.error('save_id2:', res.cookies[0].value);
-                
+
                 if (disable_auto_hex_key) {
                     assert.equal(request_sessionid, 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjgiLCJ1c2VybmFtZSI6Imxpb24ifQ.aKU95JiljVGiJiw5OU4PmIk6Vm6wJoIrkXBSDbeCmac')
                 } else {
@@ -1288,25 +1308,25 @@ function session_test(description, opts, test_opts, _before, _after) {
 ].forEach((test_opts) => {
     session_test(
         'SQLite', {
-            table_name: 'session',
-            domain: url.domain,
-            session_cache_timeout: delay * 2,
-            expires: 7 * 24 * 60 * 60 * 1000
-        }, test_opts,
+        table_name: 'session',
+        domain: url.domain,
+        session_cache_timeout: delay * 2,
+        expires: 7 * 24 * 60 * 60 * 1000
+    }, test_opts,
         () => conn = db.openSQLite('test.db'),
         () => {
             conn.close();
             try {
                 fs.unlink('test.db')
-            } catch (e) {}
+            } catch (e) { }
         });
-    
+
     session_test(
         'SQLite pool', {
-            table_name: 'session',
-            domain: url.domain,
-            session_cache_timeout: delay * 2,
-        }, test_opts,
+        table_name: 'session',
+        domain: url.domain,
+        session_cache_timeout: delay * 2,
+    }, test_opts,
         () => conn = pool(() => db.openSQLite('test.db'), 10, 1 * 1000),
         () => {
             let time_limit = new Date().getTime() + 3000;
@@ -1314,35 +1334,35 @@ function session_test(description, opts, test_opts, _before, _after) {
                 coroutine.sleep(10);
             try {
                 fs.unlink('test.db')
-            } catch (e) {}
+            } catch (e) { }
         });
-    
+
     const isTestMysql = !!process.env.FIB_SESSION_TEST_MYSQL
     isTestMysql && session_test(
         'MySQL', {
-            table_name: 'session',
-            domain: url.domain,
-            session_cache_timeout: delay * 2,
-        }, test_opts,
+        table_name: 'session',
+        domain: url.domain,
+        session_cache_timeout: delay * 2,
+    }, test_opts,
         () => conn = db.openMySQL(`mysql://${my_conf.user}:${my_conf.password}@localhost/${my_conf.database}`),
         () => {
             try {
                 conn.execute('DROP TABLE session')
-            } catch (e) {}
+            } catch (e) { }
             conn.close();
         });
-    
+
     isTestMysql && session_test(
         'MySQL pool', {
-            table_name: 'session',
-            domain: url.domain,
-            session_cache_timeout: delay * 2,
-        }, test_opts,
+        table_name: 'session',
+        domain: url.domain,
+        session_cache_timeout: delay * 2,
+    }, test_opts,
         () => conn = pool(() => db.openMySQL(`mysql://${my_conf.user}:${my_conf.password}@localhost/${my_conf.database}`), 10, 1 * 1000),
         () => {
             try {
                 conn.execute('DROP TABLE session')
-            } catch (e) {}
+            } catch (e) { }
         });
 });
 
